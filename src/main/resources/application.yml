@@ -1,0 +1,32 @@
+server:
+  port: 8880
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource: #数据库链接相关配置
+    druid:
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD}
+      url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT:3306}/${DATABASE}?useUnicode=true&characterEncoding=UTF8&useSSL=false&serverTimezone=Asia/Shanghai
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      db-type: com.alibaba.druid.pool.DruidDataSource
+      initialSize: 5
+      minIdle: 5
+      maxActive: 20
+      maxWait: 60000
+      testWhileIdle: true
+      testOnBorrow: true
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT 1
+      filter:
+        wall:
+          config:
+            show-allow: true
+
+logging:
+  level:
+    ROOT: INFO
+#    pers.wuyou.robot: DEBUG
+
