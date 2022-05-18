@@ -1,5 +1,6 @@
 package pers.wuyou.robot.core.annotation
 
+import love.forte.simboot.annotation.ContentTrim
 import love.forte.simboot.annotation.Listener
 import love.forte.simbot.event.GroupMessageEvent
 import pers.wuyou.robot.core.enums.RobotPermission
@@ -7,6 +8,7 @@ import pers.wuyou.robot.core.enums.RobotPermission
 /**
  * @author wuyou
  */
+@Suppress("OPT_IN_USAGE")
 @Retention(AnnotationRetention.RUNTIME)
 @Target(
     AnnotationTarget.FUNCTION,
@@ -17,6 +19,7 @@ import pers.wuyou.robot.core.enums.RobotPermission
     AnnotationTarget.ANNOTATION_CLASS
 )
 @Listener
+@ContentTrim
 annotation class RobotListen(
     /**
      * 描述信息

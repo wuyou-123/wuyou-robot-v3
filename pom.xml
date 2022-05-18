@@ -16,9 +16,8 @@
     <properties>
         <java.version>1.8</java.version>
         <kotlin.version>1.6.21</kotlin.version>
-        <simbot.version>3.0.0.preview.8.1</simbot.version>
-        <simbot-component-tcg.version>3.0.0.0.preview.3.1</simbot-component-tcg.version>
-        <simbot-component-mirai.version>3.0.0.0.preview.2.3</simbot-component-mirai.version>
+        <simbot.version>3.0.0.preview.9.0</simbot.version>
+        <simbot-component-mirai.version>3.0.0.0.preview.3.0</simbot-component-mirai.version>
     </properties>
     <dependencies>
         <dependency>
@@ -73,6 +72,10 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid-spring-boot-starter</artifactId>
             <version>1.2.9</version>
@@ -86,6 +89,15 @@
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
             <version>0.1.55</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+            <version>2.0.3</version>
         </dependency>
     </dependencies>
 

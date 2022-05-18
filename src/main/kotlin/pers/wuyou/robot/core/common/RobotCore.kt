@@ -2,15 +2,17 @@
 
 package pers.wuyou.robot.core.common
 
+import love.forte.simbot.Bot
+import love.forte.simbot.OriginBotManager
 import org.ktorm.database.Database
 import org.ktorm.entity.forEach
 import org.ktorm.entity.sequenceOf
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.ApplicationContext
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.entity.GroupBootStates
 import java.io.File
-import java.util.concurrent.*
 import javax.annotation.PostConstruct
 
 /**
@@ -22,6 +24,8 @@ import javax.annotation.PostConstruct
 class RobotCore {
     @Autowired
     lateinit var database: Database
+    @Autowired
+    lateinit var applicationContext: ApplicationContext
 
     @PostConstruct
     fun init() {
@@ -32,6 +36,7 @@ class RobotCore {
     @Synchronized
     private fun setApplicationContext() {
         robotCore = this
+        RobotCore.applicationContext = applicationContext
     }
 
     private fun initGroupBootMap() {
@@ -43,6 +48,8 @@ class RobotCore {
     }
 
     companion object {
+        var applicationContext: ApplicationContext? = null
+
         /**
          * 项目名
          */
@@ -64,11 +71,6 @@ class RobotCore {
         var PYTHON_PATH: String? = null
 
         /**
-         * 线程池
-         */
-        var THREAD_POOL: ExecutorService? = null
-
-        /**
          * 机器人管理员
          */
         val ADMINISTRATOR: List<String> = ArrayList(listOf("1097810498"))
@@ -87,17 +89,15 @@ class RobotCore {
             } else {
                 null
             }
-            THREAD_POOL = ThreadPoolExecutor(
-                50,
-                50,
-                200,
-                TimeUnit.SECONDS,
-                LinkedBlockingQueue(50),
-                ThreadFactory { Thread() })
         }
 
         fun isBotAdministrator(accountCode: String): Boolean {
             return ADMINISTRATOR.contains(accountCode)
+        }
+
+        @Suppress("OPT_IN_USAGE")
+        fun getBot(): Bot? {
+            return OriginBotManager.getAnyBot()
         }
     }
 }

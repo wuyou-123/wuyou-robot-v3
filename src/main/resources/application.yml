@@ -1,9 +1,8 @@
 server:
   port: 8880
 spring:
-  config:
-    activate:
-      on-profile: test
+  profiles:
+    active: test
   datasource: #数据库链接相关配置
     druid:
       username: ${MYSQL_USERNAME:root}
@@ -30,3 +29,15 @@ logging:
     ROOT: INFO
 #    pers.wuyou.robot: DEBUG
 
+# 点歌功能配置
+music:
+  tencent:
+    account: ${QQ_UIN}
+    password: ${QQ_PWD}
+  netEase:
+    account: ${NET_EASE_UIN}
+    password: ${NET_EASE_PWD}
+    serverHost: http://netmusic.wuyourj.club/
+# 项目域名
+robot:
+  host: http://robot.wuyourj.club/
