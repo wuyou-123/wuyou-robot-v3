@@ -7,13 +7,14 @@ import pers.wuyou.robot.music.entity.MusicInfo
 import pers.wuyou.robot.music.service.impl.KuWoSearchImpl
 import pers.wuyou.robot.music.service.impl.NetEaseMusicSearchImpl
 import pers.wuyou.robot.music.service.impl.QQMusicSearchImpl
+import java.io.File
 
 /**
  * @author wuyou
  */
-abstract class BaseMusicService : CommandLineRunner {
-    var musicPath: String? = null
-    var musicSearchServiceList: ArrayList<MusicSearchService>? = null
+interface BaseMusicService : CommandLineRunner {
+    val musicPath get() = RobotCore.PROJECT_PATH + TYPE_NAME + File.separator
+    var musicSearchServiceList: ArrayList<MusicSearchService>?
 
     /**
      * 搜索音乐
@@ -21,7 +22,7 @@ abstract class BaseMusicService : CommandLineRunner {
      * @param name 音乐名
      * @return 返回的音乐列表
      */
-    abstract fun search(name: String): List<MusicInfo>
+    fun search(name: String): List<MusicInfo>
 
     /**
      * 搜索音乐
@@ -30,7 +31,7 @@ abstract class BaseMusicService : CommandLineRunner {
      * @param service 搜索引擎
      * @return 返回的音乐列表
      */
-    abstract fun search(name: String, service: SearchService): List<MusicInfo>
+    fun search(name: String, service: SearchService): List<MusicInfo>
 
     enum class SearchService(
         musicSearchServiceClass: Class<out MusicSearchService>,

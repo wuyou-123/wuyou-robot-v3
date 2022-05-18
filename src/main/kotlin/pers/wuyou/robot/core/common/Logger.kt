@@ -40,7 +40,27 @@ fun logger(level: LogLevel, block: Log.() -> Any) {
     }
 }
 
-class Log() {
+fun logger(level: LogLevel, e: Throwable, block: Log.() -> Any) {
+    val logger = LoggerFactory.getLogger(getName(block))
+    Log().apply {
+        with(block()) {
+            when (this) {
+                !is Unit -> logs.add(this)
+            }
+        }
+    }.logs.forEach {
+        when (level) {
+            LogLevel.TRACE -> logger.trace(it.toString(), e)
+            LogLevel.DEBUG -> logger.debug(it.toString(), e)
+            LogLevel.INFO -> logger.info(it.toString(), e)
+            LogLevel.WARN -> logger.warn(it.toString(), e)
+            LogLevel.ERROR -> logger.error(it.toString(), e)
+            else -> {}
+        }
+    }
+}
+
+class Log {
     val logs = mutableListOf<Any>()
     operator fun String.unaryMinus() {
         logs += this

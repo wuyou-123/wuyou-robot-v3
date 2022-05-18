@@ -19,6 +19,10 @@ interface MusicInfo : Entity<MusicInfo> {
         return type.musicSearchServiceClass.download(this)
     }
 
+    fun getPreview(): String {
+        return type.musicSearchServiceClass.getPreview(this)
+    }
+
     val id: Int
 
     /**
@@ -67,7 +71,7 @@ interface MusicInfo : Entity<MusicInfo> {
     var payPlay: Boolean
 
     /**
-     * 跳转链接
+     * 播放链接
      */
     var musicUrl: String
 
@@ -91,4 +95,5 @@ object MusicInfos : Table<MusicInfo>("music_info") {
     val payPlay = boolean("pay_play").bindTo { it.payPlay }
 
 }
+
 val Database.musicInfos get() = this.sequenceOf(MusicInfos)

@@ -6,6 +6,7 @@ import org.ktorm.entity.Entity
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Service
 import pers.wuyou.robot.core.util.HttpUtil
+import pers.wuyou.robot.core.util.ResponseEntity
 import pers.wuyou.robot.music.entity.MusicInfo
 import pers.wuyou.robot.music.service.BaseMusicService
 import pers.wuyou.robot.music.service.MusicSearchService
@@ -17,28 +18,33 @@ import pers.wuyou.robot.music.service.MusicSearchService
  */
 @Service("KuWoSearchImpl")
 @Configuration
-class KuWoSearchImpl(baseMusicService: BaseMusicService) : MusicSearchService {
-    private val baseMusicService: BaseMusicService
+class KuWoSearchImpl(val baseMusicService: BaseMusicService) : MusicSearchService {
 
-    init {
-        this.baseMusicService = baseMusicService
-    }
+    private val getTokenUrl = "https://www.kuwo.cn/search/list?key=%s"
+    private val searchUrl = "https://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key=%s&pn=1&rn=10&httpsStatus=1"
+    private val musicPlayUrl =
+        "http://antiserver.kuwo.cn/anti.s?rid=%s&response=res&format=mp3%%7Caac&type=convert_url&br=128kmp3&agent=iPhone&callback=getlink&jpcallback=getlink.mp3"
+    private val musicDownloadUrl =
+        "http://antiserver.kuwo.cn/anti.s?rid=%s&response=res&format=mp3%%7Caac&type=convert_url&br=320kmp3&agent=iPhone&callback=getlink&jpcallback=getlink.mp3"
+    private val musicJumpUrl = "https://www.kuwo.cn/play_detail/%s"
+    private val cookie: MutableMap<String, String> = HashMap()
 
     override fun login(): Boolean {
         return true
     }
 
+    @Suppress("DuplicatedCode")
     override fun search(name: String): List<MusicInfo> {
-        COOKIE.clear()
-        val tokenUrl = String.format(GET_TOKEN_URL, name.trim { it <= ' ' })
-        val requestEntity: HttpUtil.ResponseEntity = HttpUtil.get(tokenUrl)
-        COOKIE.putAll(requestEntity.cookies)
-        val searchUrl = String.format(SEARCH_URL, name.trim { it <= ' ' })
+        cookie.clear()
+        val tokenUrl = String.format(getTokenUrl, name.trim { it <= ' ' })
+        val requestEntity: ResponseEntity = HttpUtil.get(tokenUrl)
+        cookie.putAll(requestEntity.cookies)
+        val searchUrl = String.format(searchUrl, name.trim { it <= ' ' })
         val jsonResponse: JSONObject = HttpUtil.get {
             url = searchUrl
-            cookies = { -COOKIE }
+            cookies = { -cookie }
             header = {
-                "csrf" - (COOKIE["kw_token"]?:"")
+                "csrf" - (cookie["kw_token"] ?: "")
                 HttpHeaders.REFERER - tokenUrl
             }
         }.getJSONResponse()!!
@@ -57,8 +63,8 @@ class KuWoSearchImpl(baseMusicService: BaseMusicService) : MusicSearchService {
             val previewUrl = jsonObject.getString("albumpic")
             val album = jsonObject.getString("album")
             val payPlay = "1111" == jsonObject.getJSONObject("payInfo").getString("play")
-            val musicUrl = String.format(MUSIC_PLAY_URL, mid)
-            val jumpUrl = String.format(MUSIC_JUMP_URL, mid.substring(6))
+            val musicUrl = String.format(musicPlayUrl, mid)
+            val jumpUrl = String.format(musicJumpUrl, mid.substring(6))
             val musicInfo = Entity.create<MusicInfo>().also {
                 it.mid = mid
                 it.artist = artist
@@ -79,21 +85,10 @@ class KuWoSearchImpl(baseMusicService: BaseMusicService) : MusicSearchService {
     }
 
     override fun download(musicInfo: MusicInfo): String? {
-        val downloadUrl = java.lang.String.format(MUSIC_DOWNLOAD_URL, musicInfo.mid)
+        val downloadUrl = java.lang.String.format(musicDownloadUrl, musicInfo.mid)
         val fileName: String = musicInfo.mid + ".mp3"
         val downloadSuccess = HttpUtil.downloadFile(downloadUrl, baseMusicService.musicPath + fileName)
         return if (downloadSuccess) fileName else null
     }
 
-    companion object {
-        private const val GET_TOKEN_URL = "https://www.kuwo.cn/search/list?key=%s"
-        private const val SEARCH_URL =
-            "https://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key=%s&pn=1&rn=10&httpsStatus=1"
-        private const val MUSIC_PLAY_URL =
-            "http://antiserver.kuwo.cn/anti.s?rid=%s&response=res&format=mp3%%7Caac&type=convert_url&br=128kmp3&agent=iPhone&callback=getlink&jpcallback=getlink.mp3"
-        private const val MUSIC_DOWNLOAD_URL =
-            "http://antiserver.kuwo.cn/anti.s?rid=%s&response=res&format=mp3%%7Caac&type=convert_url&br=320kmp3&agent=iPhone&callback=getlink&jpcallback=getlink.mp3"
-        private const val MUSIC_JUMP_URL = "https://www.kuwo.cn/play_detail/%s"
-        private val COOKIE: MutableMap<String, String> = HashMap()
-    }
 }

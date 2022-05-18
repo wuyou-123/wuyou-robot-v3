@@ -4,12 +4,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.springframework.stereotype.Service
-import pers.wuyou.robot.core.common.RobotCore
 import pers.wuyou.robot.core.common.logger
 import pers.wuyou.robot.music.entity.MusicInfo
 import pers.wuyou.robot.music.service.BaseMusicService
 import pers.wuyou.robot.music.service.MusicSearchService
-import java.io.File
 import java.util.*
 import java.util.concurrent.ExecutionException
 import java.util.stream.Collectors
@@ -18,14 +16,13 @@ import java.util.stream.Collectors
  * @author wuyou
  */
 @Service
-class MusicServiceImpl : BaseMusicService() {
-    init {
-        this.musicPath = RobotCore.PROJECT_PATH + TYPE_NAME + File.separator
-    }
+class MusicServiceImpl(
+    override var musicSearchServiceList: ArrayList<MusicSearchService>?
+) : BaseMusicService {
 
     override fun search(name: String): List<MusicInfo> {
         initServices()
-        for (service in SearchService.values()) {
+        for (service in BaseMusicService.SearchService.values()) {
             val musicInfoList: List<MusicInfo>? = searchMusic(name, service)
             if (musicInfoList != null) {
                 return musicInfoList
@@ -35,13 +32,13 @@ class MusicServiceImpl : BaseMusicService() {
         return emptyList()
     }
 
-    override fun search(name: String, service: SearchService): List<MusicInfo> {
+    override fun search(name: String, service: BaseMusicService.SearchService): List<MusicInfo> {
         initServices()
         val list: List<MusicInfo>? = searchMusic(name, service)
         return list ?: emptyList()
     }
 
-    private fun searchMusic(name: String, service: SearchService): List<MusicInfo>? {
+    private fun searchMusic(name: String, service: BaseMusicService.SearchService): List<MusicInfo>? {
         val musicSearchService: MusicSearchService = service.musicSearchServiceClass
         val musicInfoList: List<MusicInfo> = try {
             musicSearchService.search(name)
@@ -77,7 +74,7 @@ class MusicServiceImpl : BaseMusicService() {
 
     override fun run(vararg args: String) {
         initServices()
-        for (service in SearchService.values()) {
+        for (service in BaseMusicService.SearchService.values()) {
             CoroutineScope(Dispatchers.Default).launch {
                 val loginResult: Boolean = service.musicSearchServiceClass.login()
                 logger { "${service.name} login ${if (loginResult) "success" else "fail"}." }
@@ -87,9 +84,9 @@ class MusicServiceImpl : BaseMusicService() {
 
     private fun initServices() {
         if (musicSearchServiceList == null) {
-            musicSearchServiceList = ArrayList<MusicSearchService>()
-            for (service in Arrays.stream(SearchService.values())
-                .sorted(Comparator.comparingInt(SearchService::priority))
+            musicSearchServiceList = ArrayList()
+            for (service in Arrays.stream(BaseMusicService.SearchService.values())
+                .sorted(Comparator.comparingInt(BaseMusicService.SearchService::priority))
                 .collect(Collectors.toList())) {
                 musicSearchServiceList!!.add(service.musicSearchServiceClass)
             }

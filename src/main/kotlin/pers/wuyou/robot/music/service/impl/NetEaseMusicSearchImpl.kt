@@ -6,6 +6,7 @@ import org.ktorm.entity.Entity
 import org.springframework.stereotype.Service
 import pers.wuyou.robot.core.common.logger
 import pers.wuyou.robot.core.util.HttpUtil
+import pers.wuyou.robot.core.util.ResponseEntity
 import pers.wuyou.robot.music.config.MusicProperties
 import pers.wuyou.robot.music.entity.MusicInfo
 import pers.wuyou.robot.music.service.BaseMusicService
@@ -17,27 +18,36 @@ import pers.wuyou.robot.music.service.MusicSearchService
  * @author wuyou
  */
 @Service("NetEaseMusicSearchImpl")
-class NetEaseMusicSearchImpl(musicProperties: MusicProperties, baseMusicService: BaseMusicService) :
-    MusicSearchService {
+class NetEaseMusicSearchImpl(
+    musicProperties: MusicProperties, private val baseMusicService: BaseMusicService,
+) : MusicSearchService {
     private final val uin: String?
     private final val pwd: String?
     private final val serverHost: String?
-    private final val baseMusicService: BaseMusicService
+
+    private val loginUrl = "login/cellphone?phone=%s&password=%s"
+    private val loginRefreshUrl = "login/refresh"
+    private val searchUrl = "cloudsearch?keywords=%s&limit=10"
+    private val musicPlayUrl = "song/url?id=%s"
+    private val musicDownloadUrl = "song/download/url?id=%s&br=%s"
+    private val musicJumpUrl = "https://music.163.com/#/song?id=%s"
+    private val brArray = arrayOf(1411000, 999000, 320000, 128000)
+    private val netEaseMusicCookie: MutableMap<String, String> = HashMap()
+    private val successCode = 200
 
     init {
         this.uin = musicProperties.netEase.account
         this.pwd = musicProperties.netEase.password
         this.serverHost = musicProperties.netEase.serverHost
-        this.baseMusicService = baseMusicService
     }
 
     override fun login(): Boolean {
-        NET_EASE_MUSIC_COOKIE.clear()
-        val requestEntity: HttpUtil.ResponseEntity = HttpUtil.get(serverHost + String.format(LOGIN_URL, uin, pwd))
-        NET_EASE_MUSIC_COOKIE.putAll(requestEntity.cookies)
-        val json: JSONObject = requestEntity.getJSONResponse()!!
+        netEaseMusicCookie.clear()
+        val responseEntity: ResponseEntity = HttpUtil.get(serverHost + String.format(loginUrl, uin, pwd))
+        netEaseMusicCookie.putAll(responseEntity.cookies)
+        val json: JSONObject = responseEntity.getJSONResponse()!!
         val code = json["code"]
-        if (code == SUCCESS_CODE) {
+        if (code == successCode) {
             return true
         }
         logger { "NetEase login fail." }
@@ -45,16 +55,13 @@ class NetEaseMusicSearchImpl(musicProperties: MusicProperties, baseMusicService:
         return false
     }
 
+    @Suppress("DuplicatedCode")
     override fun search(name: String): List<MusicInfo> {
-        val json: JSONObject = get(
-            serverHost + java.lang.String.format(
-                SEARCH_URL,
-                URLUtil.encodePath(name.trim { it <= ' ' })
-            )
-        ).getJSONResponse()!!
+        val json: JSONObject = get(serverHost + java.lang.String.format(searchUrl,
+            URLUtil.encodePath(name.trim { it <= ' ' }))).getJSONResponse()!!
         val result = json.getJSONObject("result")
         val jsonArray = result.getJSONArray("songs")
-        val list: MutableList<MusicInfo> = ArrayList<MusicInfo>()
+        val list: MutableList<MusicInfo> = ArrayList()
         for (i in jsonArray.indices) {
             val jsonObject = jsonArray.getJSONObject(i)
             val mid = jsonObject.getString("id")
@@ -68,9 +75,9 @@ class NetEaseMusicSearchImpl(musicProperties: MusicProperties, baseMusicService:
             }
             val artists = artistList.joinToString("&")
             val payPlay: Boolean = jsonObject.getInteger("fee")?.let { it != 0 } ?: true
-            val music: JSONObject = get(serverHost + String.format(MUSIC_PLAY_URL, mid)).getJSONResponse()!!
-            val musicUrl = music.getJSONArray("data").getJSONObject(0).getString("url")?:""
-            val jumpUrl = String.format(MUSIC_JUMP_URL, mid)
+            val music: JSONObject = get(serverHost + String.format(musicPlayUrl, mid)).getJSONResponse()!!
+            val musicUrl = music.getJSONArray("data").getJSONObject(0).getString("url") ?: ""
+            val jumpUrl = String.format(musicJumpUrl, mid)
             val musicInfo = Entity.create<MusicInfo>().also {
                 it.mid = mid
                 it.artist = artists
@@ -93,8 +100,8 @@ class NetEaseMusicSearchImpl(musicProperties: MusicProperties, baseMusicService:
     }
 
     override fun download(musicInfo: MusicInfo): String? {
-        for (br in BR_ARRAY) {
-            val url = serverHost + java.lang.String.format(MUSIC_DOWNLOAD_URL, musicInfo.mid, br)
+        for (br in brArray) {
+            val url = serverHost + java.lang.String.format(musicDownloadUrl, musicInfo.mid, br)
             val json: JSONObject? = get(url).getJSONResponse()
             json?.let {
                 val downloadUrl = json.getJSONObject("data").getString("url") ?: return@let
@@ -109,31 +116,19 @@ class NetEaseMusicSearchImpl(musicProperties: MusicProperties, baseMusicService:
         return if (downloadSuccess) fileName else null
     }
 
-    private operator fun get(url: String): HttpUtil.ResponseEntity {
+    private operator fun get(url: String): ResponseEntity {
         val a = HttpUtil.get {
-            this.url = serverHost + LOGIN_REFRESH_URL
-            cookies = { -NET_EASE_MUSIC_COOKIE }
+            this.url = serverHost + loginRefreshUrl
+            cookies = { -netEaseMusicCookie }
         }
-        val json: JSONObject? =
-            a.getJSONResponse()
+        val json: JSONObject? = a.getJSONResponse()
         if (json == null) {
             login()
         }
         return HttpUtil.get {
             this.url = url
-            cookies = { -NET_EASE_MUSIC_COOKIE }
+            cookies = { -netEaseMusicCookie }
         }
     }
 
-    companion object {
-        private const val LOGIN_URL = "login/cellphone?phone=%s&password=%s"
-        private const val LOGIN_REFRESH_URL = "login/refresh"
-        private const val SEARCH_URL = "cloudsearch?keywords=%s&limit=10"
-        private const val MUSIC_PLAY_URL = "song/url?id=%s"
-        private const val MUSIC_DOWNLOAD_URL = "song/download/url?id=%s&br=%s"
-        private const val MUSIC_JUMP_URL = "https://music.163.com/#/song?id=%s"
-        private val BR_ARRAY = arrayOf(1411000, 999000, 320000, 128000)
-        private val NET_EASE_MUSIC_COOKIE: MutableMap<String, String> = HashMap()
-        private const val SUCCESS_CODE = 200
-    }
 }

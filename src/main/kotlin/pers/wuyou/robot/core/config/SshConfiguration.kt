@@ -3,11 +3,12 @@ package pers.wuyou.robot.core.config
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.Session
-import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.logging.LogLevel
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.weaving.LoadTimeWeaverAware
 import org.springframework.instrument.classloading.LoadTimeWeaver
+import pers.wuyou.robot.core.common.logger
 import javax.annotation.PreDestroy
 
 /**
@@ -16,7 +17,6 @@ import javax.annotation.PreDestroy
 @Configuration
 @EnableConfigurationProperties(SshProperties::class)
 class SshConfiguration(sshProperties: SshProperties) : LoadTimeWeaverAware {
-    private val log = LoggerFactory.getLogger(SshConfiguration::class.java)
     private var session: Session? = null
 
     init {
@@ -30,16 +30,12 @@ class SshConfiguration(sshProperties: SshProperties) : LoadTimeWeaverAware {
                 val forward = sshProperties.forward
                 if (forward != null) {
                     s.setPortForwardingL(forward.fromHost, forward.fromPort!!, forward.toHost, forward.toPort!!)
-                    log.info(
-                        "Forward database success!  {}:{} -> {}:{}",
-                        forward.fromHost,
-                        forward.fromPort,
-                        forward.toHost,
-                        forward.toPort
-                    )
+                    logger {
+                        "Forward database success!  ${forward.fromHost}:${forward.fromPort} -> ${forward.toHost}:${forward.toPort}"
+                    }
                 }
             } catch (e: JSchException) {
-                log.error("Ssh " + sshProperties.host + " failed.", e)
+                logger(LogLevel.ERROR, e) { "Ssh ${sshProperties.host} failed." }
             }
             session = s
         }

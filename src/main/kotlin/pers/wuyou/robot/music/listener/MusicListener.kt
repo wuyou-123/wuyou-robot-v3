@@ -126,29 +126,22 @@ class MusicListener(musicSearchService: BaseMusicService) {
             info = musicSearchService.search(musicInfo.title, BaseMusicService.SearchService.KU_WO)
                 .stream().filter(MusicInfo::payPlay).findFirst().get()
         }
-        val one = database.musicInfos.find { it.mid eq info.mid }
-        one?.let {
-            it.musicUrl = musicInfo.musicUrl
+        database.musicInfos.find { it.mid eq info.mid }?.let {
             info = it
         }
-        if (info.fileName.isNotBlank() && FileUtil.exist(BaseMusicService.TYPE_NAME + File.separator + info.fileName)) {
-            info.fileName = info.fileName
-        } else {
+        if (info.fileName.isBlank() || !FileUtil.exist(BaseMusicService.TYPE_NAME + File.separator + info.fileName)) {
             val fileName = info.download()
             if (fileName != null && fileName.isNotEmpty()) {
+                Sender.send(this, host + "music/" + info.mid)
                 info.fileName = fileName
-                if (info.id == 0) {
-                    database.musicInfos.add(info)
-                } else {
-                    info.flushChanges()
+                when (info.id) {
+                    0 -> database.musicInfos.add(info)
+                    else -> info.flushChanges()
                 }
-            }
+            } else Sender.send(this, "获取下载链接失败,换一个吧~")
+            return
         }
-        if (info.fileName.isBlank()) {
-            Sender.send(this, "获取下载链接失败,换一个吧~")
-        } else {
-            Sender.send(this, host + "music/" + info.mid)
-        }
+        Sender.send(this, host + "music/" + info.mid)
     }
 
     fun MessageEvent.play(musicInfo: MusicInfo) {
@@ -159,7 +152,7 @@ class MusicListener(musicSearchService: BaseMusicService) {
                 .stream().filter(MusicInfo::payPlay).findFirst().get()
         }
         if (info.previewUrl.isEmpty()) {
-            info.previewUrl = info.type.musicSearchServiceClass.getPreview(info)
+            info.previewUrl = info.getPreview()
         }
         Sender.send(this, MessageUtil.getMusicShare(info))
         database.musicInfos.find { it.mid eq info.mid }?.let {
