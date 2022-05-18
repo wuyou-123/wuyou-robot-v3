@@ -18,10 +18,8 @@ import pers.wuyou.robot.music.service.MusicSearchService
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.*
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
 
 /**
  * QQ音乐实现
@@ -39,6 +37,12 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
     private var isWaitScan = false
 
 
+    private val getQrUrl =
+        "https://ssl.ptlogin2.qq.com/ptqrshow?appid=716027609&e=2&l=M&s=3&d=72&v=4&t=%s&pt_3rd_aid=0"
+    private val initCookieUrl =
+        "https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=716027609&target=self&style=40&s_url=https://y.qq.com/"
+    private val checkQrUrl =
+        "https://ssl.ptlogin2.qq.com/ptqrlogin?u1=https://y.qq.com/&ptqrtoken=%s&ptredirect=0&h=1&t=1&g=1&from_ui=1&ptlang=2052&action=0-0-%s&js_ver=10233&js_type=1&login_sig=%s&pt_uistyle=40&aid=716027609&"
     private val searchUrl =
         "{\"req\":{\"module\":\"music.search.SearchCgiService\",\"method\":\"DoSearchForQQMusicDesktop\",\"param\":{\"search_type\":0,\"query\":\"%s\",\"page_num\":1,\"num_per_page\":10}},\"comm\":{\"uin\":0,\"format\":\"json\",\"cv\":0}}"
     private val check =
@@ -226,7 +230,7 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
         val url2 = list1[0]
         val code = url2.substring(url2.indexOf("code=") + 5)
         if (code.isNotEmpty()) {
-            val json = String.format(musicJson2, code, gtk)
+            val json = String.format(musicJson2, code, gtk())
             val responseEntity2: ResponseEntity = HttpUtil.post {
                 url = musicUFcg
                 this.json = json
@@ -250,26 +254,24 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
             return false
         }
         cookie.clear()
-        val responseEntity: ResponseEntity = HttpUtil.get(String.format(check, uin))
-        cookie.putAll(responseEntity.cookies)
-        val path = loginQrCode
+        cookie.putAll(HttpUtil.get(String.format(check, uin)).cookies)
+        val path = loginQrCode()
         Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR[0], MessageUtil.getImageMessage(path))
         isWaitScan = true
         try {
             while (true) {
                 Thread.sleep(1000)
-                val response: String = loginState.response
+                val response: String = getLoginState().response
                 if (response.contains("ptuiCB('0'")) {
-                    val url = Arrays.stream(response.split("'".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
-                        .filter { i: String -> i.contains("http") }.collect(Collectors.toList())[0]
-                    val responseEntity1: ResponseEntity = HttpUtil.get(url)
-                    cookie.putAll(responseEntity1.cookies)
+                    val url = response.split("'".toRegex()).find { it.contains("http") }!!
+                    val responseEntity: ResponseEntity = HttpUtil.get(url)
+                    cookie.putAll(responseEntity.cookies)
                     cookie[nowTime] = System.currentTimeMillis().toString() + ""
                     logger { "scan login success." }
                     isWaitScan = false
                     return true
                 } else if (response.contains("ptuiCB('65'")) {
-                    val imagePath = loginQrCode
+                    val imagePath = loginQrCode()
                     Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR[0], MessageUtil.getImageMessage(imagePath))
                 }
             }
@@ -281,18 +283,17 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
         return false
     }
 
-    private val gtk: String
-        get() {
-            val sKey = cookie["p_skey"]
-            var hash = 5381
-            var i = 0
-            val len = sKey!!.length
-            while (i < len) {
-                hash += (hash shl 5) + sKey[i].code
-                ++i
-            }
-            return (hash and 0x7fffffff).toString()
+    private fun gtk(): String {
+        val sKey = cookie["p_skey"]
+        var hash = 5381
+        var i = 0
+        val len = sKey!!.length
+        while (i < len) {
+            hash += (hash shl 5) + sKey[i].code
+            ++i
         }
+        return (hash and 0x7fffffff).toString()
+    }
 
     private fun getResultArray(response: String): Array<String> {
         val result = response.replace("'", "")
@@ -303,53 +304,44 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
     /**
      * 初始化cookie
      */
-    private val scanCookies: Unit
-        get() {
-            val url =
-                "https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=716027609&target=self&style=40&s_url=https://y.qq.com/"
-            val responseEntity: ResponseEntity = HttpUtil.get(url)
-            responseEntity.cookies.let { cookie.putAll(it) }
-        }
+    private fun initScanCookies() {
+        val responseEntity: ResponseEntity = HttpUtil.get(initCookieUrl)
+        cookie.putAll(responseEntity.cookies)
+    }
 
     /**
      * 获取二维码
      *
      * @return 二维码图片路径
      */
-    private val loginQrCode: String
-        get() {
-            val now = System.currentTimeMillis().toString() + ""
-            scanCookies
-            val url1 =
-                String.format("https://ssl.ptlogin2.qq.com/ptqrshow?appid=716027609&e=2&l=M&s=3&d=72&v=4&t=%s&pt_3rd_aid=0",
-                    now)
-            val responseEntity: ResponseEntity = HttpUtil.get(url1)
-            cookie.putAll(responseEntity.cookies)
-            cookie["key"] = now
-            val bytes: ByteArray = responseEntity.entity
-            try {
-                FileOutputStream(RobotCore.TEMP_PATH + now).use { fileOutputStream -> fileOutputStream.write(bytes) }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-            return RobotCore.TEMP_PATH + now
+    private fun loginQrCode(): String {
+        val now = System.currentTimeMillis().toString() + ""
+        initScanCookies()
+        val responseEntity: ResponseEntity = HttpUtil.get(String.format(getQrUrl, now))
+        cookie.putAll(responseEntity.cookies)
+        cookie["key"] = now
+        val bytes: ByteArray = responseEntity.entity
+        try {
+            FileOutputStream(RobotCore.TEMP_PATH + now).use { fileOutputStream -> fileOutputStream.write(bytes) }
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
+        return RobotCore.TEMP_PATH + now
+    }
 
     /**
      * 获取登录状态
      *
      * @return 返回的登录实体
      */
-    private val loginState: ResponseEntity
-        get() {
-            val map: Map<String, String?> = cookie
-            val urlCheckTimeout =
-                ("https://ssl.ptlogin2.qq.com/ptqrlogin?u1=https://y.qq.com/&ptqrtoken=" + getPtqrtoken(map["qrsig"]) + "&ptredirect=0&h=1&t=1&g=1&from_ui=1&ptlang=2052&action=0-0-" + map["key"] + "&js_ver=10233&js_type=1&login_sig=" + map["pt_login_sig"] + "&pt_uistyle=40&aid=716027609&")
-            return HttpUtil.get {
-                url = urlCheckTimeout
-                cookies = { -map }
-            }
+    private fun getLoginState(): ResponseEntity {
+        val urlCheckTimeout =
+            String.format(checkQrUrl, getPtqrtoken(cookie["qrsig"]), cookie["key"], cookie["pt_login_sig"])
+        return HttpUtil.get {
+            url = urlCheckTimeout
+            cookies = { -cookie }
         }
+    }
 
     /**
      * 计算qrsig
