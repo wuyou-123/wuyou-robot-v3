@@ -36,10 +36,10 @@ class KuWoSearchImpl(val baseMusicService: BaseMusicService) : MusicSearchServic
     @Suppress("DuplicatedCode")
     override fun search(name: String): List<MusicInfo> {
         cookie.clear()
-        val tokenUrl = String.format(getTokenUrl, name.trim { it <= ' ' })
+        val tokenUrl = String.format(getTokenUrl, name.trim())
         val requestEntity: ResponseEntity = HttpUtil.get(tokenUrl)
         cookie.putAll(requestEntity.cookies)
-        val searchUrl = String.format(searchUrl, name.trim { it <= ' ' })
+        val searchUrl = String.format(searchUrl, name.trim())
         val jsonResponse: JSONObject = HttpUtil.get {
             url = searchUrl
             cookies = { -cookie }

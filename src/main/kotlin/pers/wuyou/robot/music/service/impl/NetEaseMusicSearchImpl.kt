@@ -32,7 +32,7 @@ class NetEaseMusicSearchImpl(
     private val musicDownloadUrl = "song/download/url?id=%s&br=%s"
     private val musicJumpUrl = "https://music.163.com/#/song?id=%s"
     private val brArray = arrayOf(1411000, 999000, 320000, 128000)
-    private val netEaseMusicCookie: MutableMap<String, String> = HashMap()
+    private val cookie: MutableMap<String, String> = HashMap()
     private val successCode = 200
 
     init {
@@ -42,9 +42,9 @@ class NetEaseMusicSearchImpl(
     }
 
     override fun login(): Boolean {
-        netEaseMusicCookie.clear()
+        cookie.clear()
         val responseEntity: ResponseEntity = HttpUtil.get(serverHost + String.format(loginUrl, uin, pwd))
-        netEaseMusicCookie.putAll(responseEntity.cookies)
+        cookie.putAll(responseEntity.cookies)
         val json: JSONObject = responseEntity.getJSONResponse()!!
         val code = json["code"]
         if (code == successCode) {
@@ -57,8 +57,12 @@ class NetEaseMusicSearchImpl(
 
     @Suppress("DuplicatedCode")
     override fun search(name: String): List<MusicInfo> {
-        val json: JSONObject = get(serverHost + java.lang.String.format(searchUrl,
-            URLUtil.encodePath(name.trim { it <= ' ' }))).getJSONResponse()!!
+        refreshCookie()
+        val json =
+            HttpUtil.get {
+                url = serverHost + java.lang.String.format(searchUrl, URLUtil.encodePath(name.trim()))
+                cookies = { -cookie }
+            }.getJSONResponse()!!
         val result = json.getJSONObject("result")
         val jsonArray = result.getJSONArray("songs")
         val list: MutableList<MusicInfo> = ArrayList()
@@ -75,7 +79,10 @@ class NetEaseMusicSearchImpl(
             }
             val artists = artistList.joinToString("&")
             val payPlay: Boolean = jsonObject.getInteger("fee")?.let { it != 0 } ?: true
-            val music: JSONObject = get(serverHost + String.format(musicPlayUrl, mid)).getJSONResponse()!!
+            val music = HttpUtil.get {
+                url = serverHost + String.format(musicPlayUrl, mid)
+                cookies = { -cookie }
+            }.getJSONResponse()!!
             val musicUrl = music.getJSONArray("data").getJSONObject(0).getString("url") ?: ""
             val jumpUrl = String.format(musicJumpUrl, mid)
             val musicInfo = Entity.create<MusicInfo>().also {
@@ -94,15 +101,20 @@ class NetEaseMusicSearchImpl(
     }
 
     override fun getPreview(musicInfo: MusicInfo): String {
-        val response: String = get("https://music.163.com/song?id=" + musicInfo.mid).response
+        val response = HttpUtil.get {
+            url = "https://music.163.com/song?id=" + musicInfo.mid
+            cookies = { -cookie }
+        }.response
         val prefix = "f-fl\">\n<img src=\""
         return response.substring(response.indexOf(prefix) + prefix.length, response.indexOf("\" class=\"j-img\""))
     }
 
     override fun download(musicInfo: MusicInfo): String? {
         for (br in brArray) {
-            val url = serverHost + java.lang.String.format(musicDownloadUrl, musicInfo.mid, br)
-            val json: JSONObject? = get(url).getJSONResponse()
+            val json = HttpUtil.get {
+                url = serverHost + java.lang.String.format(musicDownloadUrl, musicInfo.mid, br)
+                cookies = { -cookie }
+            }.getJSONResponse()
             json?.let {
                 val downloadUrl = json.getJSONObject("data").getString("url") ?: return@let
                 val fileName = downloadUrl.substring(downloadUrl.lastIndexOf("/"))
@@ -116,18 +128,12 @@ class NetEaseMusicSearchImpl(
         return if (downloadSuccess) fileName else null
     }
 
-    private operator fun get(url: String): ResponseEntity {
-        val a = HttpUtil.get {
+    private fun refreshCookie() {
+        HttpUtil.get {
             this.url = serverHost + loginRefreshUrl
-            cookies = { -netEaseMusicCookie }
-        }
-        val json: JSONObject? = a.getJSONResponse()
-        if (json == null) {
+            cookies = { -cookie }
+        }.getJSONResponse()?.let {
             login()
-        }
-        return HttpUtil.get {
-            this.url = url
-            cookies = { -netEaseMusicCookie }
         }
     }
 

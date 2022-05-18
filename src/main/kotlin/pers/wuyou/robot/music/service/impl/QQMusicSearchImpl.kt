@@ -85,14 +85,14 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
 
     @Suppress("DuplicatedCode")
     override fun search(name: String): List<MusicInfo> {
-        val json: JSONObject = HttpUtil.get {
+        val json = HttpUtil.get {
             url = musicUFcg
-            params = { "data" - String.format(searchUrl, name.trim { it <= ' ' }) }
+            params = { "data" - String.format(searchUrl, name.trim()) }
             cookies = { -cookie }
         }.getJSONResponse() ?: return emptyList()
         val jsonArray = json.getJSONObject("req").getJSONObject("data").getJSONObject("body").getJSONObject("song")
             .getJSONArray("list")
-        val list: MutableList<MusicInfo> = ArrayList<MusicInfo>()
+        val list: MutableList<MusicInfo> = ArrayList()
         for (i in jsonArray.indices) {
             val jsonObject = jsonArray.getJSONObject(i)
             val mid = jsonObject.getString("mid")
@@ -136,8 +136,8 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
     }
 
     override fun getPreview(musicInfo: MusicInfo): String {
-        return java.lang.String.format("https:%s",
-            HttpUtil.getJson(musicInfo.jumpUrl, "__INITIAL_DATA__").getJSONObject("detail").getString("picurl"))
+        return String.format("https:%s", HttpUtil.getJson(musicInfo.jumpUrl, "__INITIAL_DATA__")
+            .getJSONObject("detail").getString("picurl"))
     }
 
     private fun getPurl(data: Map<String, String>): String {
@@ -145,12 +145,12 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
             url = musicUFcg
             params = { -data }
             cookies = { -cookie }
-        }.getJSONResponse()?.getJSONObject("req")?.getJSONObject("data")?.getJSONArray("midurlinfo")?.getJSONObject(0)
-            ?.getString("purl") ?: ""
+        }.getJSONResponse()?.getJSONObject("req")?.getJSONObject("data")
+            ?.getJSONArray("midurlinfo")?.getJSONObject(0)?.getString("purl") ?: ""
     }
 
     override fun download(musicInfo: MusicInfo): String? {
-        val musicUrl: String = musicInfo.musicUrl
+        val musicUrl = musicInfo.musicUrl
         val name =
             musicUrl.substring(musicUrl.indexOf(Br.M4A.prefix) + Br.M4A.prefix.length, musicUrl.indexOf(Br.M4A.suffix))
         val data: MutableMap<String, String> = HashMap(2)
@@ -263,7 +263,7 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
                 Thread.sleep(1000)
                 val response: String = getLoginState().response
                 if (response.contains("ptuiCB('0'")) {
-                    val url = response.split("'".toRegex()).find { it.contains("http") }!!
+                    val url = response.split("'").find { it.contains("http") }!!
                     val responseEntity: ResponseEntity = HttpUtil.get(url)
                     cookie.putAll(responseEntity.cookies)
                     cookie[nowTime] = System.currentTimeMillis().toString() + ""
@@ -297,8 +297,7 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
 
     private fun getResultArray(response: String): Array<String> {
         val result = response.replace("'", "")
-        return result.substring(response.indexOf("(") + 1, result.length - 1).split(",".toRegex())
-            .dropLastWhile { it.isEmpty() }.toTypedArray()
+        return result.substring(response.indexOf("(") + 1, result.length - 1).split(",").toTypedArray()
     }
 
     /**
@@ -336,7 +335,7 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
      */
     private fun getLoginState(): ResponseEntity {
         val urlCheckTimeout =
-            String.format(checkQrUrl, getPtqrtoken(cookie["qrsig"]), cookie["key"], cookie["pt_login_sig"])
+            String.format(checkQrUrl, getPtqrtoken(cookie["qrsig"]!!), cookie["key"], cookie["pt_login_sig"])
         return HttpUtil.get {
             url = urlCheckTimeout
             cookies = { -cookie }
@@ -348,9 +347,9 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
      *
      * @return 计算后的结果
      */
-    private fun getPtqrtoken(qrsig: String?): Int {
+    private fun getPtqrtoken(qrsig: String): Int {
         var e = 0
-        val n = qrsig!!.length
+        val n = qrsig.length
         for (j in 0 until n) {
             e += (e shl 5)
             e += qrsig.toCharArray()[j].code
