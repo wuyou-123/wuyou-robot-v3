@@ -13,10 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import pers.wuyou.robot.music.entity.musicInfos
 import pers.wuyou.robot.music.service.BaseMusicService
-import java.io.BufferedInputStream
 import java.io.File
 import java.io.IOException
-import java.nio.file.Files
 import javax.servlet.http.HttpServletResponse
 
 /**
@@ -30,7 +28,7 @@ class MusicController {
 
     @GetMapping("/{mid}")
     fun getMusic(@PathVariable("mid") mid: String, response: HttpServletResponse, model: Model) {
-        val musicInfo = database.musicInfos.find{ it.mid eq mid }
+        val musicInfo = database.musicInfos.find { it.mid eq mid }
         if (musicInfo == null) {
             response.status = 404
             return
@@ -47,17 +45,9 @@ class MusicController {
         fileName = URLUtil.encodePath(fileName)
         response.setHeader("Content-Disposition", "attachment; filename=$fileName")
         response.setHeader("Content-Length", file.length().toString())
-        val buff = ByteArray(1024)
         try {
             response.outputStream.use { outputStream ->
-                BufferedInputStream(Files.newInputStream(file.toPath())).use { bis ->
-                    var read: Int = bis.read(buff)
-                    while (read != -1) {
-                        outputStream.write(buff, 0, buff.size)
-                        outputStream.flush()
-                        read = bis.read(buff)
-                    }
-                }
+                outputStream.write(file.readBytes())
             }
         } catch (e: IOException) {
             e.printStackTrace()

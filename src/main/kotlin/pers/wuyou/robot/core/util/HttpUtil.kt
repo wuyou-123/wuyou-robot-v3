@@ -109,7 +109,7 @@ object HttpUtil {
                     store.clear()
                 }
             } catch (e: IOException) {
-                logger(LogLevel.WARN, e) { "" }
+                logger(LogLevel.WARN, e)
             }
             return responseEntity
         } catch (e: InterruptedException) {

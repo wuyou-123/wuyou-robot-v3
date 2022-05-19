@@ -12,7 +12,6 @@ import love.forte.simbot.event.Event
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.Messages
 import love.forte.simbot.message.MessagesBuilder
-import love.forte.simbot.message.toText
 
 
 /**
@@ -20,67 +19,103 @@ import love.forte.simbot.message.toText
  */
 @Suppress("unused")
 object Sender {
-    fun send(event: Event, vararg messages: Any) {
+    fun send(
+        event: Event,
+        messages: Any,
+        separator: String = "",
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            if (event is SendSupport) event.send(buildMessage(*messages))
+            if (event is SendSupport) event.send(buildMessage(messages, separator))
         }
     }
 
-    fun sendGroupMsg(group: Group, vararg messages: Any) {
+    fun sendGroupMsg(
+        group: Group,
+        messages: Any,
+        separator: String = "",
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            group.send(buildMessage(*messages))
+            group.send(buildMessage(messages, separator))
         }
     }
 
-    fun sendGroupMsg(group: ID, vararg messages: Any) {
+    fun sendGroupMsg(
+        group: ID,
+        messages: Any,
+        separator: String = "",
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            getGroup(group)?.send(buildMessage(*messages))
+            getGroup(group)?.send(buildMessage(messages, separator))
         }
     }
 
-    fun sendGroupMsg(group: String, vararg messages: Any) {
+    fun sendGroupMsg(
+        group: String,
+        messages: Any,
+        separator: String = "",
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            getGroup(group.ID)?.send(buildMessage(*messages))
+            getGroup(group.ID)?.send(buildMessage(messages, separator))
         }
     }
 
-    fun sendPrivateMsg(friend: Friend, vararg messages: Any) {
+    fun sendPrivateMsg(
+        friend: Friend,
+        messages: Any,
+        separator: String = "",
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            friend.send(buildMessage(*messages))
+            friend.send(buildMessage(messages, separator))
         }
     }
 
-    fun sendPrivateMsg(friend: ID, vararg messages: Any) {
+    fun sendPrivateMsg(
+        friend: ID,
+        messages: Any,
+        separator: String = "",
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            getFriend(friend)?.send(buildMessage(messages))
+            getFriend(friend)?.send(buildMessage(messages, separator))
         }
     }
 
-    fun sendPrivateMsg(friend: String, vararg messages: Any) {
+    fun sendPrivateMsg(
+        friend: String,
+        messages: Any,
+        separator: String = "",
+    ) {
         CoroutineScope(Dispatchers.Default).launch {
-            getFriend(friend.ID)?.send(buildMessage(*messages))
+            getFriend(friend.ID)?.send(buildMessage(messages, separator))
         }
     }
 
-    private fun getFriend(friend: ID): Friend? =
-        runBlocking { RobotCore.getBot()?.friend(friend) }
+    private fun getFriend(friend: ID): Friend? = runBlocking { RobotCore.getBot()?.friend(friend) }
 
-    private fun getGroup(group: ID): Group? {
-        buildMessage()
-        return runBlocking { RobotCore.getBot()?.group(group) }
-    }
+    private fun getGroup(group: ID): Group? = runBlocking { RobotCore.getBot()?.group(group) }
 
-    private fun buildMessage(vararg messages: Any): Messages =
-        MessagesBuilder().apply {
-            messages.forEach {
-                when (it) {
-                    is Message.Element<*> -> {
-                        this.append(it)
-                    }
-                    else -> {
-                        this.append(it.toString().toText())
+    private fun buildMessage(
+        messages: Any,
+        separator: String = "",
+    ): Messages = MessagesBuilder().apply {
+        when (messages) {
+            is Array<*> -> {
+                messages.forEachIndexed { index, it ->
+                    append(it.toString())
+                    if (index != messages.size - 1) {
+                        append(separator)
                     }
                 }
             }
-        }.build()
+            is Iterable<*> -> {
+                messages.forEachIndexed { index, it ->
+                    append(it.toString())
+                    if (index != messages.count() - 1) {
+                        append(separator)
+                    }
+                }
+            }
+            is Message.Element<*> -> append(messages)
+            else -> append(messages.toString())
+        }
+    }.build()
 }

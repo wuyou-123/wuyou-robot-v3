@@ -10,7 +10,11 @@ import pers.wuyou.robot.core.common.RobotCore
 import pers.wuyou.robot.core.common.Sender
 import pers.wuyou.robot.core.common.logger
 import pers.wuyou.robot.core.exception.ResourceNotFoundException
-import pers.wuyou.robot.core.util.*
+import pers.wuyou.robot.core.util.CommandUtil
+import pers.wuyou.robot.core.util.FileUtil
+import pers.wuyou.robot.core.util.HttpUtil
+import pers.wuyou.robot.core.util.MessageUtil.getImageMessage
+import pers.wuyou.robot.core.util.ResponseEntity
 import pers.wuyou.robot.music.config.MusicProperties
 import pers.wuyou.robot.music.entity.MusicInfo
 import pers.wuyou.robot.music.service.BaseMusicService
@@ -37,8 +41,7 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
     private var isWaitScan = false
 
 
-    private val getQrUrl =
-        "https://ssl.ptlogin2.qq.com/ptqrshow?appid=716027609&e=2&l=M&s=3&d=72&v=4&t=%s&pt_3rd_aid=0"
+    private val getQrUrl = "https://ssl.ptlogin2.qq.com/ptqrshow?appid=716027609&e=2&l=M&s=3&d=72&v=4&t=%s&pt_3rd_aid=0"
     private val initCookieUrl =
         "https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=716027609&target=self&style=40&s_url=https://y.qq.com/"
     private val checkQrUrl =
@@ -136,8 +139,8 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
     }
 
     override fun getPreview(musicInfo: MusicInfo): String {
-        return String.format("https:%s", HttpUtil.getJson(musicInfo.jumpUrl, "__INITIAL_DATA__")
-            .getJSONObject("detail").getString("picurl"))
+        return String.format("https:%s",
+            HttpUtil.getJson(musicInfo.jumpUrl, "__INITIAL_DATA__").getJSONObject("detail").getString("picurl"))
     }
 
     private fun getPurl(data: Map<String, String>): String {
@@ -145,8 +148,8 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
             url = musicUFcg
             params = { -data }
             cookies = { -cookie }
-        }.getJSONResponse()?.getJSONObject("req")?.getJSONObject("data")
-            ?.getJSONArray("midurlinfo")?.getJSONObject(0)?.getString("purl") ?: ""
+        }.getJSONResponse()?.getJSONObject("req")?.getJSONObject("data")?.getJSONArray("midurlinfo")?.getJSONObject(0)
+            ?.getString("purl") ?: ""
     }
 
     override fun download(musicInfo: MusicInfo): String? {
@@ -257,29 +260,33 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
         cookie.clear()
         cookie.putAll(HttpUtil.get(String.format(check, uin)).cookies)
         val path = loginQrCode()
-        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR[0], MessageUtil.getImageMessage(path))
+        Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR[0], path.getImageMessage())
         isWaitScan = true
         try {
             while (true) {
                 Thread.sleep(1000)
                 val response: String = getLoginState().response
+                if (response.isEmpty()) return false
                 if (response.contains("ptuiCB('0'")) {
                     val url = response.split("'").find { it.contains("http") }!!
                     val responseEntity: ResponseEntity = HttpUtil.get(url)
                     cookie.putAll(responseEntity.cookies)
                     cookie[nowTime] = System.currentTimeMillis().toString() + ""
                     logger { "scan login success." }
-                    isWaitScan = false
                     return true
                 } else if (response.contains("ptuiCB('65'")) {
                     val imagePath = loginQrCode()
-                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR[0], MessageUtil.getImageMessage(imagePath))
+                    Sender.sendPrivateMsg(RobotCore.ADMINISTRATOR[0], imagePath.getImageMessage())
+                } else if (response.contains("ptuiCB('68'")) {
+                    return false
                 }
             }
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
         } catch (e: ExecutionException) {
             e.printStackTrace()
+        } finally {
+            isWaitScan = false
         }
         return false
     }
@@ -335,11 +342,16 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
      * @return 返回的登录实体
      */
     private fun getLoginState(): ResponseEntity {
-        val urlCheckTimeout =
-            String.format(checkQrUrl, getPtqrtoken(cookie["qrsig"]!!), cookie["key"], cookie["pt_login_sig"])
-        return HttpUtil.get {
-            url = urlCheckTimeout
-            cookies = { -cookie }
+        return try {
+            val urlCheckTimeout =
+                String.format(checkQrUrl, getPtqrtoken(cookie["qrsig"]!!), cookie["key"], cookie["pt_login_sig"])
+            HttpUtil.get {
+                url = urlCheckTimeout
+                cookies = { -cookie }
+            }
+        } catch (e: RuntimeException) {
+            logger(LogLevel.ERROR, e)
+            ResponseEntity()
         }
     }
 

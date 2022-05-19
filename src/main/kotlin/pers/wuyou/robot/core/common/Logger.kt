@@ -40,7 +40,7 @@ fun logger(level: LogLevel, block: Log.() -> Any) {
     }
 }
 
-fun logger(level: LogLevel, e: Throwable, block: Log.() -> Any) {
+fun logger(level: LogLevel, e: Throwable, block: Log.() -> Any = {}) {
     val logger = LoggerFactory.getLogger(getName(block))
     Log().apply {
         with(block()) {

@@ -16,7 +16,7 @@ import pers.wuyou.robot.core.entity.GroupBootState
 import pers.wuyou.robot.core.entity.GroupBootStates
 import pers.wuyou.robot.core.entity.groupBootStates
 import pers.wuyou.robot.core.enums.RobotPermission
-import pers.wuyou.robot.core.util.MessageUtil
+import pers.wuyou.robot.core.util.MessageUtil.getAtSet
 
 /**
  * 监听群开关机
@@ -28,23 +28,27 @@ class BootListener(private val database: Database) {
     @RobotListen(permission = RobotPermission.ADMINISTRATOR)
     @Filter("开机")
     suspend fun GroupMessageEvent.boot() {
-        println(messageContent)
-        println(MessageUtil.getAtList(messageContent))
-        val groupCode = group().id.toString()
-        logger { "群${groupCode}开机" }
-        if (!RobotCore.BOOT_MAP.getOrDefault(groupCode, false)) {
-            bootOrDown(groupCode, true)
+        val atSet = getAtSet()
+        if (atSet.isEmpty() || atSet.contains(bot.id)) {
+            val groupCode = group().id.toString()
+            logger { "群${groupCode}开机" }
+            if (!RobotCore.BOOT_MAP.getOrDefault(groupCode, false)) {
+                bootOrDown(groupCode, true)
+            }
+            sendIfSupport("已开机")
         }
-        sendIfSupport("已开机")
     }
 
     @RobotListen(permission = RobotPermission.ADMINISTRATOR, isBoot = true)
     @Filter("关机")
     suspend fun GroupMessageEvent.down() {
-        val groupCode = group().id.toString()
-        logger { "群${groupCode}关机" }
-        bootOrDown(groupCode, false)
-        sendIfSupport("已关机")
+        val atSet = getAtSet()
+        if (atSet.isEmpty() || atSet.contains(bot.id)) {
+            val groupCode = group().id.toString()
+            logger { "群${groupCode}关机" }
+            bootOrDown(groupCode, false)
+            sendIfSupport("已关机")
+        }
     }
 
     private fun bootOrDown(groupCode: String, state: Boolean) {
