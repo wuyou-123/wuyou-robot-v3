@@ -207,9 +207,10 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
         // 扫描登录返回code
         val scanCode = "10005"
         val retry = "7"
+        val msgLogin = "10009"
         return when (resultArray1[0]) {
             successCode -> getCookies(resultArray1[2])
-            scanCode, retry -> scanLogin()
+            scanCode, retry, msgLogin -> scanLogin()
             else -> {
                 logger(LogLevel.WARN) { "qq music login fail!" }
                 false

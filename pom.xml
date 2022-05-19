@@ -16,8 +16,9 @@
     <properties>
         <java.version>1.8</java.version>
         <kotlin.version>1.6.21</kotlin.version>
-        <simbot.version>3.0.0.preview.9.0</simbot.version>
-        <simbot-component-mirai.version>3.0.0.0.preview.3.0</simbot-component-mirai.version>
+        <simbot.version>3.0.0.preview.8.1</simbot.version>
+        <simbot-component-tcg.version>3.0.0.0.preview.3.1</simbot-component-tcg.version>
+        <simbot-component-mirai.version>3.0.0.0.preview.2.3</simbot-component-mirai.version>
     </properties>
     <dependencies>
         <dependency>
@@ -103,7 +104,7 @@
 
     <build>
         <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
-        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test</testSourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
