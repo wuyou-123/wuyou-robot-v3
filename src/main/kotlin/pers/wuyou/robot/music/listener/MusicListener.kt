@@ -1,14 +1,12 @@
 package pers.wuyou.robot.music.listener
 
+import kotlinx.coroutines.withTimeout
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType.REGEX_MATCHES
 import love.forte.simbot.ExperimentalSimbotApi
 import love.forte.simbot.ID
-import love.forte.simbot.event.ContinuousSessionContext
-import love.forte.simbot.event.FriendMessageEvent
-import love.forte.simbot.event.GroupMessageEvent
-import love.forte.simbot.event.MessageEvent
+import love.forte.simbot.event.*
 import org.ktorm.database.Database
 import org.ktorm.dsl.eq
 import org.ktorm.entity.add
@@ -89,19 +87,22 @@ class MusicListener(private val database: Database, private val musicSearchServi
     }
 
     private suspend fun MessageEvent.getNum(session: ContinuousSessionContext): Int? = getId(this)?.let { id ->
-        session.waitingForOnMessage(id = id.ID, timeout = 60000L, this) { event, _, provider ->
-            getId(event)?.let {
-                if (it == id) {
-                    val text = event.messageContent.plainText
-                    val num = Regex("""^(?:下载|播放)?\s*(\d*)$""").find(text)?.groups?.get(1)?.value
-                    num?.let {
-                        provider.push(when {
-                            text.startsWith("下载") -> 0x10.or(num.toInt())
-                            else -> num.toInt()
-                        })
+        try {
+            withTimeout(60000L) {
+                val pattern = """^(?:下载|播放)?\s*(\d*)$"""
+                val text = session.waitingForNextMessage(id.ID, EventMatcher {
+                    return@EventMatcher Regex(pattern).matches(it.messageContent.plainText)
+                }).plainText
+                val num = Regex(pattern).find(text)?.groups?.get(1)?.value
+                return@withTimeout num?.let {
+                    when {
+                        text.startsWith("下载") -> 0x10.or(num.toInt())
+                        else -> num.toInt()
                     }
                 }
             }
+        } catch (e: Exception) {
+            return@let -1
         }
     }
 

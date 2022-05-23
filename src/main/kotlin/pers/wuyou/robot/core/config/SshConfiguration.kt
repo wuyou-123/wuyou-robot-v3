@@ -16,28 +16,27 @@ import javax.annotation.PreDestroy
  */
 @Configuration
 @EnableConfigurationProperties(SshProperties::class)
-class SshConfiguration(sshProperties: SshProperties) : LoadTimeWeaverAware {
+class SshConfiguration(private val sshProperties: SshProperties) : LoadTimeWeaverAware {
     private var session: Session? = null
 
     init {
         if (sshProperties.host != null) {
-            var s: Session? = null
             try {
-                s = JSch().getSession(sshProperties.username, sshProperties.host, sshProperties.port!!)
-                s.setConfig("StrictHostKeyChecking", "no")
-                s.setPassword(sshProperties.password)
-                s.connect()
-                val forward = sshProperties.forward
-                if (forward != null) {
-                    s.setPortForwardingL(forward.fromHost, forward.fromPort!!, forward.toHost, forward.toPort!!)
-                    logger {
-                        "Forward database success!  ${forward.fromHost}:${forward.fromPort} -> ${forward.toHost}:${forward.toPort}"
+                session = JSch().getSession(sshProperties.username, sshProperties.host, sshProperties.port!!).apply {
+                    setConfig("StrictHostKeyChecking", "no")
+                    setPassword(sshProperties.password)
+                    serverAliveInterval = 20000
+                    connect()
+                    sshProperties.forward?.let {
+                        setPortForwardingL(it.fromHost, it.fromPort!!, it.toHost, it.toPort!!)
+                        logger {
+                            "Forward database success!  ${it.fromHost}:${it.fromPort} -> ${it.toHost}:${it.toPort}"
+                        }
                     }
                 }
             } catch (e: JSchException) {
                 logger(LogLevel.ERROR, e) { "Ssh ${sshProperties.host} failed." }
             }
-            session = s
         }
     }
 

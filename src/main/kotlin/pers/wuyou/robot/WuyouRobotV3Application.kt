@@ -1,6 +1,6 @@
 package pers.wuyou.robot
 
-import love.forte.simboot.autoconfigure.EnableSimbot
+import love.forte.simboot.spring.autoconfigure.EnableSimbot
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 

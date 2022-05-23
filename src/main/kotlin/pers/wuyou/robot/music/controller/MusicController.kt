@@ -1,6 +1,7 @@
 package pers.wuyou.robot.music.controller
 
 import com.sun.deploy.util.URLUtil
+import org.apache.tomcat.util.http.fileupload.FileUploadBase
 import org.ktorm.database.Database
 import org.ktorm.dsl.eq
 import org.ktorm.entity.find
@@ -40,8 +41,8 @@ class MusicController(private var database: Database) {
             musicInfo.fileName.substring(musicInfo.fileName.lastIndexOf("."))
         }"
         fileName = URLUtil.encodePath(fileName)
-        response.setHeader("Content-Disposition", "attachment; filename=$fileName")
-        response.setHeader("Content-Length", file.length().toString())
+        response.setHeader(FileUploadBase.CONTENT_DISPOSITION, "attachment; filename=$fileName")
+        response.setHeader(FileUploadBase.CONTENT_LENGTH, file.length().toString())
         try {
             response.outputStream.use { outputStream ->
                 outputStream.write(file.readBytes())
