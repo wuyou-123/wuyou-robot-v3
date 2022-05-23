@@ -7,12 +7,13 @@ import love.forte.simbot.OriginBotManager
 import org.ktorm.database.Database
 import org.ktorm.entity.forEach
 import org.ktorm.entity.sequenceOf
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.entity.GroupBootStates
 import java.io.File
+import java.util.*
+import java.util.concurrent.ThreadLocalRandom
 import javax.annotation.PostConstruct
 
 /**
@@ -21,11 +22,7 @@ import javax.annotation.PostConstruct
 @Suppress("unused")
 @Order(1)
 @Component
-class RobotCore {
-    @Autowired
-    lateinit var database: Database
-    @Autowired
-    lateinit var applicationContext: ApplicationContext
+class RobotCore(private val database: Database, private var applicationContext: ApplicationContext) {
 
     @PostConstruct
     fun init() {
@@ -79,6 +76,11 @@ class RobotCore {
          * 缓存群开关
          */
         val BOOT_MAP: MutableMap<String?, Boolean> = HashMap()
+
+        /**
+         * 全局随机数
+         */
+        val RANDOM: Random = ThreadLocalRandom.current()
 
         var robotCore: RobotCore? = null
 

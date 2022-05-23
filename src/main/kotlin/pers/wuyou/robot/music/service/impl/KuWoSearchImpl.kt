@@ -5,6 +5,7 @@ import org.apache.http.HttpHeaders
 import org.ktorm.entity.Entity
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Service
+import pers.wuyou.robot.core.common.Constant
 import pers.wuyou.robot.core.util.HttpUtil
 import pers.wuyou.robot.core.util.ResponseEntity
 import pers.wuyou.robot.music.entity.MusicInfo
@@ -48,10 +49,9 @@ class KuWoSearchImpl(val baseMusicService: BaseMusicService) : MusicSearchServic
                 HttpHeaders.REFERER - tokenUrl
             }
         }.getJSONResponse()!!
-        val successCode = 200
         val code = jsonResponse.getInteger("code")
         val list: MutableList<MusicInfo> = ArrayList()
-        if (code != successCode) {
+        if (code != Constant.SUCCESS_CODE) {
             return list
         }
         val jsonArray = jsonResponse.getJSONObject("data").getJSONArray("list")

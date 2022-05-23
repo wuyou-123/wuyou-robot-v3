@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject
 import com.sun.deploy.util.URLUtil
 import org.ktorm.entity.Entity
 import org.springframework.stereotype.Service
+import pers.wuyou.robot.core.common.Constant
 import pers.wuyou.robot.core.common.logger
 import pers.wuyou.robot.core.util.HttpUtil
 import pers.wuyou.robot.core.util.ResponseEntity
@@ -33,7 +34,7 @@ class NetEaseMusicSearchImpl(
     private val musicJumpUrl = "https://music.163.com/#/song?id=%s"
     private val brArray = arrayOf(1411000, 999000, 320000, 128000)
     private val cookie: MutableMap<String, String> = HashMap()
-    private val successCode = 200
+    private val successCode = Constant.SUCCESS_CODE
 
     init {
         this.uin = musicProperties.netEase.account

@@ -4,7 +4,6 @@ import com.sun.deploy.util.URLUtil
 import org.ktorm.database.Database
 import org.ktorm.dsl.eq
 import org.ktorm.entity.find
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.util.MimeTypeUtils
@@ -22,9 +21,7 @@ import javax.servlet.http.HttpServletResponse
  */
 @Controller
 @RequestMapping("music")
-class MusicController {
-    @Autowired
-    lateinit var database: Database
+class MusicController(private var database: Database) {
 
     @GetMapping("/{mid}")
     fun getMusic(@PathVariable("mid") mid: String, response: HttpServletResponse, model: Model) {

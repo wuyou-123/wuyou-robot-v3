@@ -13,7 +13,6 @@ import org.ktorm.database.Database
 import org.ktorm.dsl.eq
 import org.ktorm.entity.add
 import org.ktorm.entity.find
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.annotation.RobotListen
@@ -32,18 +31,9 @@ import java.io.File
 @Suppress("OPT_IN_IS_NOT_ENABLED")
 @OptIn(ExperimentalSimbotApi::class)
 @Component
-class MusicListener(musicSearchService: BaseMusicService) {
-    private val musicSearchService: BaseMusicService
-
-    @Autowired
-    lateinit var database: Database
-
+class MusicListener(private val database: Database, private val musicSearchService: BaseMusicService) {
     @Value("\${robot.host}")
     private val host: String? = null
-
-    init {
-        this.musicSearchService = musicSearchService
-    }
 
     @RobotListen(desc = "点歌", isBoot = true)
     @Filter(value = "^(网易.*|[Q,q]{2}.*|)(点歌|搜歌){{name}}$", matchType = REGEX_MATCHES)

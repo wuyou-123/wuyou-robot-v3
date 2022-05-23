@@ -41,3 +41,5 @@ music:
 # 项目域名
 robot:
   host: http://robot.wuyourj.club/
+  ip-host: http://robot.wuyourj.club/
+  tianapi-key: ${TIANAPI_KEY}

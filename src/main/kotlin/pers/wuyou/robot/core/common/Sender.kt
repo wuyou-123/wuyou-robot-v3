@@ -6,9 +6,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.ID
 import love.forte.simbot.action.SendSupport
+import love.forte.simbot.action.sendIfSupport
 import love.forte.simbot.definition.Friend
 import love.forte.simbot.definition.Group
 import love.forte.simbot.event.Event
+import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.Message
 import love.forte.simbot.message.Messages
 import love.forte.simbot.message.MessagesBuilder
@@ -25,7 +27,10 @@ object Sender {
         separator: String = "",
     ) {
         CoroutineScope(Dispatchers.Default).launch {
-            if (event is SendSupport) event.send(buildMessage(messages, separator))
+            when (event) {
+                is SendSupport -> event.send(buildMessage(messages, separator))
+                is MessageEvent -> event.source().sendIfSupport(buildMessage(messages, separator))
+            }
         }
     }
 
