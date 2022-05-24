@@ -9,7 +9,7 @@ import love.forte.simbot.event.GroupMessageEvent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.annotation.RobotListen
-import pers.wuyou.robot.core.common.Sender
+import pers.wuyou.robot.core.common.send
 import pers.wuyou.robot.core.util.TianApiTool
 import java.util.*
 
@@ -50,7 +50,7 @@ class LookListener(private val tianApiTool: TianApiTool) {
 //            it.previewUrl = "${host}look?group=${group().id}&amp;time=$now"
 //        }.getMusicShare()
         val msg = MiraiShare("", "窥屏检测中...", "电脑端窥屏暂时无法检测...", "${host}look?group=${group().id}")
-        Sender.send(this, msg)
+        send(msg)
         delay(10000L)
         val list = ArrayList<String>()
         LOOK_MAP[group().id]?.let {
@@ -60,7 +60,7 @@ class LookListener(private val tianApiTool: TianApiTool) {
             }
         }
         if (list.size > 0) {
-            Sender.send(this, list, "\n")
+            send(list, "\n")
         }
         LOOK_MAP.remove(group().id)
 

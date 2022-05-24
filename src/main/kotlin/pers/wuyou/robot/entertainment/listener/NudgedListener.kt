@@ -12,7 +12,7 @@ import org.ktorm.entity.*
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.annotation.RobotListen
 import pers.wuyou.robot.core.common.RobotCore
-import pers.wuyou.robot.core.common.Sender
+import pers.wuyou.robot.core.common.send
 import pers.wuyou.robot.entertainment.entity.Sentence
 import pers.wuyou.robot.entertainment.entity.Sentences
 import pers.wuyou.robot.entertainment.entity.sentences
@@ -44,7 +44,7 @@ class NudgedListener(private val database: Database) {
         val text = messageList.removeAt(RobotCore.RANDOM.nextInt(messageList.size))
         cacheMessageList.add(text)
         messageList.add(cacheMessageList.removeAt(0))
-        Sender.send(this, text)
+        send(text)
     }
 
     @RobotListen()
@@ -73,7 +73,7 @@ class NudgedListener(private val database: Database) {
     @Filter("list")
     suspend fun FriendMessageEvent.listNudgeMessage() {
         if (RobotCore.ADMINISTRATOR.contains(friend().id.toString())) {
-            Sender.send(this, messageList, "\n")
+            send(messageList, "\n")
         }
     }
 }

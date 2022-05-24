@@ -25,6 +25,6 @@ class TestListener {
 //    @Listener
 //    suspend fun GroupMessageEvent.groupTest2() {
 //        println("groupTest")
-////        Sender.send(group(), "执行了监听器groupTest2")
+////        send(group(), "执行了监听器groupTest2")
 //    }
 }
