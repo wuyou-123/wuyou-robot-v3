@@ -22,38 +22,31 @@ class LookListener(private val tianApiTool: TianApiTool) {
     @Value("\${robot.ip-host}")
     private val host: String = ""
 
-    private val LOOK_MAP: MutableMap<ID, TreeSet<String>> = HashMap()
-    private val IP_MAP: MutableMap<String, String> = HashMap()
-    private val IPV4_LENGTH = 4
+    private val lookMap: MutableMap<ID, TreeSet<String>> = HashMap()
+    private val ipMap: MutableMap<String, String> = HashMap()
+    private val ipv4Length = 4
     fun addIp(ip: String, group: ID) {
-        if (LOOK_MAP[group] == null) {
+        if (lookMap[group] == null) {
             return
         }
-        LOOK_MAP[group]?.add(ip)
+        lookMap[group]?.add(ip)
         val ipDetail = getIpDetail(ip)
-        IP_MAP[ip] = ipDetail
+        ipMap[ip] = ipDetail
     }
 
     @Suppress("OPT_IN_USAGE")
     @RobotListen(desc = "窥屏检测", isBoot = true)
     @Filter("窥屏检测")
     suspend fun GroupMessageEvent.look() {
-        if (LOOK_MAP.containsKey(group().id)) {
+        if (lookMap.containsKey(group().id)) {
             return
         }
-        LOOK_MAP[group().id] = TreeSet()
-//        val msg = Entity.create<MusicInfo>().also {
-//            it.title = "窥屏检测中..."
-//            it.artist = "请稍后..."
-//            it.jumpUrl = host
-//            it.musicUrl = host
-//            it.previewUrl = "${host}look?group=${group().id}&amp;time=$now"
-//        }.getMusicShare()
+        lookMap[group().id] = TreeSet()
         val msg = MiraiShare("", "窥屏检测中...", "电脑端窥屏暂时无法检测...", "${host}look?group=${group().id}")
         send(msg)
         delay(10000L)
         val list = ArrayList<String>()
-        LOOK_MAP[group().id]?.let {
+        lookMap[group().id]?.let {
             list.add("检测结束, 有${it.size}人窥屏")
             it.forEach { ip ->
                 list.add(getIpDetail(ip))
@@ -62,7 +55,7 @@ class LookListener(private val tianApiTool: TianApiTool) {
         if (list.size > 0) {
             send(list, "\n")
         }
-        LOOK_MAP.remove(group().id)
+        lookMap.remove(group().id)
 
     }
 
@@ -75,7 +68,7 @@ class LookListener(private val tianApiTool: TianApiTool) {
 
     private fun encryptIp(ip: String): String {
         val split = ip.split(".")
-        return if (split.size == IPV4_LENGTH) listOf(split[0], split[1], "xxx", "xxx").joinToString(".")
+        return if (split.size == ipv4Length) listOf(split[0], split[1], "xxx", "xxx").joinToString(".")
         else ip
     }
 }

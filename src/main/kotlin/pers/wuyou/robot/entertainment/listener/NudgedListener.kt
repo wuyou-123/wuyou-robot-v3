@@ -47,7 +47,7 @@ class NudgedListener(private val database: Database) {
         send(text)
     }
 
-    @RobotListen()
+    @RobotListen
     @Filter(value = "^add{{text}}", matchType = MatchType.REGEX_MATCHES)
     suspend fun FriendMessageEvent.addNudgeMessage(
         @FilterValue("text") text: String,
@@ -58,7 +58,7 @@ class NudgedListener(private val database: Database) {
         }
     }
 
-    @RobotListen()
+    @RobotListen
     @Filter(value = "^remove{{text}}", matchType = MatchType.REGEX_MATCHES)
     suspend fun FriendMessageEvent.removeNudgeMessage(
         @FilterValue("text") text: String,
@@ -69,7 +69,7 @@ class NudgedListener(private val database: Database) {
         }
     }
 
-    @RobotListen()
+    @RobotListen
     @Filter("list")
     suspend fun FriendMessageEvent.listNudgeMessage() {
         if (RobotCore.ADMINISTRATOR.contains(friend().id.toString())) {
