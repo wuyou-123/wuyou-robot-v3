@@ -17,10 +17,7 @@
         <java.version>1.8</java.version>
         <kotlin.version>1.6.21</kotlin.version>
         <simbot.version>3.0.0.preview.10.1</simbot.version>
-        <simbot-component-mirai.version>3.0.0.0.preview.4.0</simbot-component-mirai.version>
-        <!--        <simbot.version>3.0.0.preview.8.1</simbot.version>-->
-        <!--        <simbot-component-tcg.version>3.0.0.0.preview.3.1</simbot-component-tcg.version>-->
-        <!--        <simbot-component-mirai.version>3.0.0.0.preview.2.3</simbot-component-mirai.version>-->
+        <simbot-component-mirai.version>3.0.0.0.preview.5.0</simbot-component-mirai.version>
     </properties>
     <dependencies>
         <dependency>
@@ -44,20 +41,6 @@
             <groupId>love.forte.simbot.component</groupId>
             <artifactId>simbot-component-mirai-boot</artifactId>
             <version>${simbot-component-mirai.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>love.forte.simbot</groupId>
-                    <artifactId>simbot-logger</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>love.forte.simbot</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>love.forte.simbot.boot</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
