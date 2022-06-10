@@ -58,7 +58,7 @@ class GameManager {
          * @param game [Game]的实例对象
          * @param event 群消息事件
          */
-        suspend  fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> createRoom(
+        suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> createRoom(
             game: Game<G, R, P>,
             event: GroupMessageEvent,
         ): R {
@@ -70,7 +70,12 @@ class GameManager {
                 return it.call(event.groupId(), event.group().name, game).apply {
                     game.roomList.add(this)
                     gameManager.roomList.add(this)
-                    gameManager.playerList.add(addPlayer(event.author()))
+                    addPlayer(event.author()).let { player ->
+                        gameManager.playerList.add(player)
+                        if (!playerList.contains(player)) {
+                            playerList.add(player)
+                        }
+                    }
                     createRoom()
                 }
             }
