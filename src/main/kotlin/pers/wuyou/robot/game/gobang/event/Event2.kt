@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 @Component
 class Event2 : GameEvent<GobangGame, GobangRoom, GobangPlayer>() {
     override val matcher: GameEventMatcher = GameEventMatcher {
-        it == "开始游戏"
+        it.plainText == "开始游戏"
     }
 
     override suspend fun invoke(e: Any) {

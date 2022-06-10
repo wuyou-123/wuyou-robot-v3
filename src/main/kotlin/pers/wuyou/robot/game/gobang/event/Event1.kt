@@ -14,7 +14,7 @@ import pers.wuyou.robot.game.gobang.GobangRoom
 class Event1 : GameEvent<GobangGame, GobangRoom, GobangPlayer>() {
     private val pattern = Regex("""^(\d|1[0-4])\s*[^\da-z]*\s*([a-o])$|^([a-o])\s*[^\da-z]*\s*(\d|1[0-4])$""")
     override val matcher: GameEventMatcher = GameEventMatcher {
-        pattern.matches(it)
+        pattern.matches(it.plainText)
     }
 
     override suspend fun invoke(e: Any) {

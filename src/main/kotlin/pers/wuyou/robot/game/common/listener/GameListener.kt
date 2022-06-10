@@ -163,7 +163,7 @@ class GameListener {
         // 根据玩家状态获取游戏事件并执行
         game.eventMap[player.getStatus()]?.let { map ->
             map.find {
-                it.matcher.invoke(messageContent.plainText)
+                it.matcher.invoke(messageContent)
             }?.invoke(player).isNull {
                 player.room.otherMessage(messageContent)
             }
