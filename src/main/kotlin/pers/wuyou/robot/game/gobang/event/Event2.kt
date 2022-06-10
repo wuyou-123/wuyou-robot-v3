@@ -2,9 +2,9 @@ package pers.wuyou.robot.game.gobang.event
 
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.common.isNull
-import pers.wuyou.robot.game.common.GameStatus
 import pers.wuyou.robot.game.common.interfaces.GameEvent
 import pers.wuyou.robot.game.common.interfaces.GameEventMatcher
+import pers.wuyou.robot.game.common.interfaces.GameStatus
 import pers.wuyou.robot.game.gobang.GobangGame
 import pers.wuyou.robot.game.gobang.GobangPlayer
 import pers.wuyou.robot.game.gobang.GobangRoom

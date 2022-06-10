@@ -6,7 +6,6 @@ import love.forte.simbot.message.MessageContent
 import pers.wuyou.robot.core.common.Sender
 import pers.wuyou.robot.core.common.getBean
 import pers.wuyou.robot.core.common.logger
-import pers.wuyou.robot.game.common.GameStatus
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.TimeUnit
 import javax.annotation.PostConstruct
@@ -59,4 +58,24 @@ abstract class GameEvent<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, 
         player: P, message: String,
     ) = Sender.sendGroupMsg(player.room.id, message)
 
+}
+
+/**
+ * 游戏状态
+ */
+class GameStatus(val status: String) {
+    override fun toString(): String {
+        return status
+    }
+}
+
+/**
+ * 事件匹配器
+ */
+fun interface GameEventMatcher {
+    /**
+     * 执行匹配方法
+     * @param msg 收到的消息
+     */
+    suspend operator fun invoke(msg: String): Boolean
 }

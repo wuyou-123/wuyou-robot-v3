@@ -1,7 +1,6 @@
 package pers.wuyou.robot.game.common.interfaces
 
 import pers.wuyou.robot.core.common.Sender
-import pers.wuyou.robot.game.common.GameStatus
 
 /**
  * @author wuyou

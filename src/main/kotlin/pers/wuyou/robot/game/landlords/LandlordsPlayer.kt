@@ -1,6 +1,6 @@
 package pers.wuyou.robot.game.landlords
 
-import pers.wuyou.robot.game.common.GameStatus
+import pers.wuyou.robot.game.common.interfaces.GameStatus
 import pers.wuyou.robot.game.common.interfaces.Player
 
 /**

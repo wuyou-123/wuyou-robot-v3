@@ -2,7 +2,6 @@ package pers.wuyou.robot.game.common.interfaces
 
 import pers.wuyou.robot.core.common.isNull
 import pers.wuyou.robot.core.exception.RobotException
-import pers.wuyou.robot.game.common.GameStatus
 import pers.wuyou.robot.game.common.listener.GameListener
 import javax.annotation.PostConstruct
 import kotlin.reflect.KClass
