@@ -1,10 +1,16 @@
 package pers.wuyou.robot.game.common.listener
 
+import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.Filters
 import love.forte.simboot.filter.MultiFilterMatchType
+import love.forte.simboot.listener.ParameterBinder
+import love.forte.simboot.listener.ParameterBinderFactory
+import love.forte.simboot.listener.ParameterBinderResult
 import love.forte.simbot.PriorityConstant
+import love.forte.simbot.attribute
 import love.forte.simbot.event.ContinuousSessionContext
+import love.forte.simbot.event.EventListenerProcessingContext
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
 import org.springframework.stereotype.Component
@@ -15,16 +21,39 @@ import pers.wuyou.robot.core.common.sendAndWait
 import pers.wuyou.robot.core.common.stringMutableList
 import pers.wuyou.robot.core.util.MessageUtil.authorId
 import pers.wuyou.robot.core.util.MessageUtil.groupId
-import pers.wuyou.robot.game.common.GameAttr
 import pers.wuyou.robot.game.common.GameManager
 import pers.wuyou.robot.game.common.interfaces.Game
 import pers.wuyou.robot.game.common.interfaces.Player
 import pers.wuyou.robot.game.common.interfaces.Room
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.full.findAnnotation
 
-/**
- * @author wuyou
- */
+@Beans
+class GameParameterBinderFactory : ParameterBinderFactory {
+    override fun resolveToBinder(context: ParameterBinderFactory.Context): ParameterBinderResult {
+
+        // 寻找参数上的注解，找不到则跳过
+        val attrAnnotation = context.parameter.findAnnotation<GameAttr>() ?: return ParameterBinderResult.empty()
+
+        // 构建binder
+        // 细节问题自己处理，可空处理等。
+        return ParameterBinderResult.normal(AttrBinder(attrAnnotation.value))
+
+    }
+
+    private class AttrBinder(attrName: String) : ParameterBinder {
+        private val attr = attribute<Any>(attrName)
+        override suspend fun arg(context: EventListenerProcessingContext): Result<Any?> {
+            // 从上下文尝试获取目标
+            // 此处无视任何细节，直接尝试返回
+            return kotlin.runCatching { context[attr] }
+        }
+    }
+}
+
+annotation class GameAttr(val value: String)
+
+
 @Component
 class GameListener {
     @RobotListen(isBoot = true)
