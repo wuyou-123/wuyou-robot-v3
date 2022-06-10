@@ -3,6 +3,7 @@ package pers.wuyou.robot.music.service
 import net.mamoe.mirai.message.data.MusicKind
 import org.springframework.boot.CommandLineRunner
 import pers.wuyou.robot.core.common.RobotCore
+import pers.wuyou.robot.core.common.getBean
 import pers.wuyou.robot.music.entity.MusicInfo
 import pers.wuyou.robot.music.service.impl.KuWoSearchImpl
 import pers.wuyou.robot.music.service.impl.NetEaseMusicSearchImpl
@@ -57,7 +58,7 @@ interface BaseMusicService : CommandLineRunner {
         val musicSearchServiceClass: MusicSearchService
 
         init {
-            this.musicSearchServiceClass = RobotCore.applicationContext?.getBean(musicSearchServiceClass)!!
+            this.musicSearchServiceClass = getBean(musicSearchServiceClass)
         }
     }
 

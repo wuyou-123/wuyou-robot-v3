@@ -3,6 +3,9 @@ package pers.wuyou.robot.core.util
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.ID
 import love.forte.simbot.component.mirai.message.MiraiMusicShare
+import love.forte.simbot.event.ChatRoomMessageEvent
+import love.forte.simbot.event.FriendMessageEvent
+import love.forte.simbot.event.GroupEvent
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
 import love.forte.simbot.message.Message
@@ -36,5 +39,17 @@ object MessageUtil {
 
     fun MusicInfo.getMusicShare(): Message {
         return MiraiMusicShare(type.kind, title, artist, jumpUrl, previewUrl, musicUrl, "[分享]${title}")
+    }
+
+    suspend fun ChatRoomMessageEvent.authorId(): String {
+        return author().id.toString()
+    }
+
+    suspend fun FriendMessageEvent.authorId(): String {
+        return friend().id.toString()
+    }
+
+    suspend fun GroupEvent.groupId(): String {
+        return group().id.toString()
     }
 }

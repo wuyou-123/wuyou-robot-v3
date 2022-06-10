@@ -76,7 +76,7 @@ class MusicServiceImpl(
         initServices()
         for (service in BaseMusicService.SearchService.values()) {
             CoroutineScope(Dispatchers.Default).launch {
-                val loginResult: Boolean = service.musicSearchServiceClass.login()
+                val loginResult = service.musicSearchServiceClass.login()
                 logger { "${service.name} login ${if (loginResult) "success" else "fail"}." }
             }
         }

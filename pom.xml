@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--suppress VulnerableLibrariesLocal -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -16,8 +17,8 @@
     <properties>
         <java.version>1.8</java.version>
         <kotlin.version>1.6.21</kotlin.version>
-        <simbot.version>3.0.0.preview.10.1</simbot.version>
-        <simbot-component-mirai.version>3.0.0.0.preview.5.0</simbot-component-mirai.version>
+        <simbot.version>3.0.0.preview.11.1</simbot.version>
+        <simbot-component-mirai.version>3.0.0.0.preview.6.0</simbot-component-mirai.version>
     </properties>
     <dependencies>
         <dependency>
@@ -36,7 +37,6 @@
             <version>${simbot.version}</version>
         </dependency>
         <!-- mirai组件 -->
-        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>love.forte.simbot.component</groupId>
             <artifactId>simbot-component-mirai-boot</artifactId>

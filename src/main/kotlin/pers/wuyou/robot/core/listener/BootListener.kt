@@ -17,6 +17,7 @@ import pers.wuyou.robot.core.entity.GroupBootStates
 import pers.wuyou.robot.core.entity.groupBootStates
 import pers.wuyou.robot.core.enums.RobotPermission
 import pers.wuyou.robot.core.util.MessageUtil.getAtSet
+import pers.wuyou.robot.core.util.MessageUtil.groupId
 
 /**
  * 监听群开关机
@@ -30,7 +31,7 @@ class BootListener(private val database: Database) {
     suspend fun GroupMessageEvent.boot() {
         val atSet = getAtSet()
         if (atSet.isEmpty() || atSet.contains(bot.id)) {
-            val groupCode = group().id.toString()
+            val groupCode = groupId()
             logger { "群${groupCode}开机" }
             if (!RobotCore.BOOT_MAP.getOrDefault(groupCode, false)) {
                 bootOrDown(groupCode, true)
@@ -44,7 +45,7 @@ class BootListener(private val database: Database) {
     suspend fun GroupMessageEvent.down() {
         val atSet = getAtSet()
         if (atSet.isEmpty() || atSet.contains(bot.id)) {
-            val groupCode = group().id.toString()
+            val groupCode = groupId()
             logger { "群${groupCode}关机" }
             bootOrDown(groupCode, false)
             send("已关机")

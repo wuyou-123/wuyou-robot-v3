@@ -1,12 +1,12 @@
-package pers.wuyou.robot.core.listener
-
-import org.springframework.stereotype.Component
-
-/**
- * @author wuyou
- */
-@Component
-class TestListener {
+//package pers.wuyou.robot.core.listener
+//
+//import org.springframework.stereotype.Component
+//
+///**
+// * @author wuyou
+// */
+//@Component
+//class TestListener {
 //    @RobotListen(desc = "测试私聊监听器")
 //    @Filter("1")
 //    suspend fun FriendMessageEvent.test() {
@@ -27,4 +27,4 @@ class TestListener {
 //        println("groupTest")
 ////        send(group(), "执行了监听器groupTest2")
 //    }
-}
+//}

@@ -23,7 +23,7 @@ class ListenerAspect {
     /**
      * 拦截监听器方法
      */
-    @Around("@annotation(pers.wuyou.robot.core.annotation.RobotListen) && @annotation(annotation)) && args(continuation)")
+    @Around("@annotation(pers.wuyou.robot.core.annotation.RobotListen) && @annotation(annotation))")
     fun ProceedingJoinPoint.doAroundAdvice(annotation: RobotListen): Any? {
         val start = System.currentTimeMillis()
         val event = args.find { it is Event } ?: return proceed()

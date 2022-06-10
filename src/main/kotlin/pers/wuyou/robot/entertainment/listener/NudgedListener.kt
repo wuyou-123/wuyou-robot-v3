@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.annotation.RobotListen
 import pers.wuyou.robot.core.common.RobotCore
 import pers.wuyou.robot.core.common.send
+import pers.wuyou.robot.core.util.MessageUtil.authorId
 import pers.wuyou.robot.entertainment.entity.Sentence
 import pers.wuyou.robot.entertainment.entity.Sentences
 import pers.wuyou.robot.entertainment.entity.sentences
@@ -52,7 +53,7 @@ class NudgedListener(private val database: Database) {
     suspend fun FriendMessageEvent.addNudgeMessage(
         @FilterValue("text") text: String,
     ) {
-        if (RobotCore.ADMINISTRATOR.contains(friend().id.toString())) {
+        if (RobotCore.ADMINISTRATOR.contains(authorId())) {
             messageList.add(text)
             database.sentences.add(Entity.create<Sentence>().also { it.text = text })
         }
@@ -63,7 +64,7 @@ class NudgedListener(private val database: Database) {
     suspend fun FriendMessageEvent.removeNudgeMessage(
         @FilterValue("text") text: String,
     ) {
-        if (RobotCore.ADMINISTRATOR.contains(friend().id.toString())) {
+        if (RobotCore.ADMINISTRATOR.contains(authorId())) {
             messageList.remove(text)
             database.sentences.removeIf { Sentences.text eq text }
         }
@@ -72,7 +73,7 @@ class NudgedListener(private val database: Database) {
     @RobotListen
     @Filter("list")
     suspend fun FriendMessageEvent.listNudgeMessage() {
-        if (RobotCore.ADMINISTRATOR.contains(friend().id.toString())) {
+        if (RobotCore.ADMINISTRATOR.contains(authorId())) {
             send(messageList, "\n")
         }
     }

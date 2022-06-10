@@ -45,7 +45,7 @@ class RobotCore(private val database: Database, private var applicationContext: 
     }
 
     companion object {
-        var applicationContext: ApplicationContext? = null
+        lateinit var applicationContext: ApplicationContext
 
         /**
          * 项目名
@@ -70,7 +70,7 @@ class RobotCore(private val database: Database, private var applicationContext: 
         /**
          * 机器人管理员
          */
-        val ADMINISTRATOR: List<String> = ArrayList(listOf("1097810498"))
+        val ADMINISTRATOR: List<String> = listOf("1097810498")
 
         /**
          * 缓存群开关
@@ -100,6 +100,30 @@ class RobotCore(private val database: Database, private var applicationContext: 
         @Suppress("OPT_IN_USAGE")
         fun getBot(): Bot? {
             return OriginBotManager.getAnyBot()
+        }
+    }
+}
+
+fun <T> getBean(requiredType: Class<T>): T = RobotCore.applicationContext.getBean(requiredType)
+
+inline fun <T> T.isNull(block: () -> Unit): T {
+    if (this == null) block()
+    return this
+}
+
+fun stringMutableList(vararg elements: String): MutableList<String> = mutableListOf(*elements)
+fun String.substring(startStr: String = "", endStr: String = ""): String {
+    val start = (if (startStr.isEmpty()) 0 else this.indexOf(startStr) + startStr.length).let {
+        if (it > 0) it else 0
+    }
+    val end = if (endStr.isEmpty()) this.length else this.indexOf(endStr).let {
+        if (it > 0) it else 0
+    }
+    return let {
+        try {
+            substring(start, end)
+        } catch (e: StringIndexOutOfBoundsException) {
+            ""
         }
     }
 }

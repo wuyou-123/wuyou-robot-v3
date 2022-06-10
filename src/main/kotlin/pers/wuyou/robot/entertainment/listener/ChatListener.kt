@@ -6,6 +6,7 @@ import love.forte.simbot.event.GroupMessageEvent
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.annotation.RobotListen
 import pers.wuyou.robot.core.common.send
+import pers.wuyou.robot.core.util.MessageUtil.authorId
 import pers.wuyou.robot.core.util.MessageUtil.getAtSet
 import pers.wuyou.robot.core.util.TianApiTool
 
@@ -21,7 +22,7 @@ class ChatListener(val tianApiTool: TianApiTool) {
     suspend fun GroupMessageEvent.chat() {
         getAtSet().let {
             if (it.size == 1 && it.contains(bot.id)) {
-                send(tianApiTool.chatApi(messageContent.plainText.trim(), author().id.toString()))
+                send(tianApiTool.chatApi(messageContent.plainText.trim(), authorId()))
             }
         }
     }
