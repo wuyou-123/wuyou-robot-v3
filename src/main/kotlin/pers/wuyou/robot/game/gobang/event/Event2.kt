@@ -31,9 +31,9 @@ class Event2 : GameEvent<GobangGame, GobangRoom, GobangPlayer>() {
     suspend fun play(player: GobangPlayer) {
         val next = sendRoomAndWaitPlayerNext(player, "开始游戏, 请在10秒内回复", 10, TimeUnit.SECONDS)
         next?.let {
-            sendRoom(player, it.plainText)
+            sendRoom(player.room, it.plainText)
         }.isNull {
-            sendRoom(player, "超时了!")
+            sendRoom(player.room, "超时了!")
         }
     }
 }

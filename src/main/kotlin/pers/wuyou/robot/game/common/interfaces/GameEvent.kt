@@ -42,10 +42,19 @@ abstract class GameEvent<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, 
         logger { "初始化游戏事件 ${this@GameEvent::class}" }
     }
 
+    /**
+     * 向房间内发送消息并等待玩家的下一条消息
+     * @param player 玩家对象
+     * @param message 消息内容
+     * @param timeout 超时时间,单位[timeUnit]
+     * @param timeUnit 超时时间单位
+     * @param eventMatcher 收到消息时的匹配方法,只返回匹配通过时的消息
+     */
     open suspend fun sendRoomAndWaitPlayerNext(
-        player: P, message: String,
-        timeout: Long = 0,
-        timeUnit: TimeUnit = TimeUnit.MILLISECONDS,
+        player: P,
+        message: String,
+        timeout: Long = 1,
+        timeUnit: TimeUnit = TimeUnit.MINUTES,
         eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
     ): MessageContent? {
         player.room.game.waitPlayerList.add(player)
@@ -54,9 +63,12 @@ abstract class GameEvent<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, 
         }
     }
 
-    open suspend fun sendRoom(
-        player: P, message: String,
-    ) = Sender.sendGroupMsg(player.room.id, message)
+    /**
+     * 向房间内发送消息
+     * @param room
+     * @param message 消息内容
+     */
+    open suspend fun sendRoom(room: R, message: String) = Sender.sendGroupMsg(room.id, message)
 
 }
 

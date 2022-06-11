@@ -93,7 +93,7 @@ abstract class Room<G : Game<G, R, P>, P : Player<G, R, P>, R : Room<G, P, R>> {
     /**
      * 收到其他消息的处理方法
      */
-    abstract fun otherMessage(messageContent: MessageContent)
+    open fun otherMessage(messageContent: MessageContent) {}
 
     /**
      * 获取房间描述信息
