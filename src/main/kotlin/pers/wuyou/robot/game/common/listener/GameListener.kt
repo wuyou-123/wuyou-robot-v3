@@ -71,7 +71,7 @@ class GameListener {
         send(msg, "\n")
     }
 
-    @RobotListen(isBoot = true)
+    @RobotListen(isBoot = true, priority = PriorityConstant.PRIORITIZED_8)
     @Filters(
         Filter("离开|退出|离开房间|退出房间|不玩了|exit"),
         Filter(by = GameEventFilter::class),
@@ -151,7 +151,7 @@ class GameListener {
     }
 
     @Suppress("OPT_IN_USAGE")
-    @RobotListen(isBoot = true, priority = PriorityConstant.PRIORITIZED_1)
+    @RobotListen(isBoot = true, priority = PriorityConstant.PRIORITIZED_9)
     @Filter(by = GameEventFilter::class)
     suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> GroupMessageEvent.gameEvent(
         @GameAttr("game") game: Game<G, R, P>,
