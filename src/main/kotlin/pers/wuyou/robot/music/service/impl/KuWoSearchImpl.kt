@@ -3,7 +3,7 @@ package pers.wuyou.robot.music.service.impl
 import com.alibaba.fastjson2.JSONObject
 import org.apache.http.HttpHeaders
 import org.ktorm.entity.Entity
-import org.springframework.context.annotation.Configuration
+import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import pers.wuyou.robot.core.common.Constant
 import pers.wuyou.robot.core.util.HttpUtil
@@ -18,7 +18,7 @@ import pers.wuyou.robot.music.service.MusicSearchService
  * @author wuyou
  */
 @Service("KuWoSearchImpl")
-@Configuration
+@Component
 class KuWoSearchImpl(val baseMusicService: BaseMusicService) : MusicSearchService {
 
     private val getTokenUrl = "https://www.kuwo.cn/search/list?key=%s"

@@ -1,13 +1,16 @@
 package pers.wuyou.robot.game.common
 
-import love.forte.simbot.attribute
+import kotlinx.coroutines.runBlocking
+import love.forte.simbot.definition.Member
 import love.forte.simbot.event.GroupMessageEvent
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.common.RobotCore
 import pers.wuyou.robot.core.common.logger
 import pers.wuyou.robot.core.exception.RobotException
+import pers.wuyou.robot.core.util.MessageUtil.authorId
 import pers.wuyou.robot.core.util.MessageUtil.groupId
 import pers.wuyou.robot.game.common.interfaces.Game
+import pers.wuyou.robot.game.common.interfaces.GameArg
 import pers.wuyou.robot.game.common.interfaces.Player
 import pers.wuyou.robot.game.common.interfaces.Room
 import java.lang.reflect.ParameterizedType
@@ -19,22 +22,33 @@ import javax.annotation.PostConstruct
 @Component
 class GameManager {
     lateinit var gameSet: Set<Game<*, *, *>>
-    val roomList: MutableList<Room<*, *, *>> = mutableListOf()
-    val playerList: MutableList<Player<*, *, *>> = mutableListOf()
+    val roomList = mutableListOf<Room<*, *, *>>()
+    val playerList = mutableListOf<Player<*, *, *>>()
 
     @PostConstruct
     fun init() {
         gameManager = this
         gameSet = RobotCore.applicationContext.getBeansOfType(Game::class.java).let { map ->
-            val games: MutableSet<Game<*, *, *>> = HashSet()
+            val games = HashSet<Game<*, *, *>>()
             val nameList = mutableListOf<String>()
             map.forEach {
-                games.add(it.value)
-                if (nameList.contains(it.value.name)) {
-                    throw RobotException("已存在名为${it.value.name}的游戏!")
+                logger { "registering game ${it.value.name}(${it.value.id})..." }
+                it.value.let { game ->
+                    games.add(game)
+                    if (nameList.contains(game.id)) {
+                        throw RobotException("已存在id为${game.id}的游戏!")
+                    }
+                    nameList.add(game.id)
+                    if (game.minPlayerCount > game.maxPlayerCount) {
+                        throw RobotException("maxPlayerCount(${game.maxPlayerCount}) must greater than minPlayerCount(${game.minPlayerCount})")
+                    }
+                    if (game.minPlayerCount <= 0 || game.maxPlayerCount <= 0) {
+                        throw RobotException("maxPlayerCount(${game.maxPlayerCount}) and minPlayerCount(${game.minPlayerCount}) must greater than 1")
+                    }
+                    game.copyResources()
+                    runBlocking { game.load() }
                 }
-                nameList.add(it.value.name)
-                logger { "register game ${it.value.name} success!" }
+                logger { "register game ${it.value.name}(${it.value.id}) success!" }
             }
             games
         }
@@ -42,11 +56,6 @@ class GameManager {
 
     companion object {
         lateinit var gameManager: GameManager
-
-        /**
-         * 游戏的attribute
-         */
-        val gameAttribute = attribute<Game<*, *, *>>("game")
 
         /**
          * 获取[Game]的实例对象
@@ -61,25 +70,20 @@ class GameManager {
         suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> createRoom(
             game: Game<G, R, P>,
             event: GroupMessageEvent,
+            args: GameArg,
         ): R {
-            @Suppress("UNCHECKED_CAST") val room =
-                (game.javaClass.genericSuperclass as ParameterizedType).actualTypeArguments.find {
-                    (it as Class<*>).superclass == Room::class.java
-                } as Class<R>
-            room.kotlin.constructors.find { it.parameters.size == 3 }?.let {
-                return it.call(event.groupId(), event.group().name, game).apply {
-                    game.roomList.add(this)
-                    gameManager.roomList.add(this)
-                    addPlayer(event.author()).let { player ->
-                        gameManager.playerList.add(player)
-                        if (!playerList.contains(player)) {
-                            playerList.add(player)
-                        }
+            return instanceRoom(game, event)?.apply {
+                game.roomList.add(this)
+                gameManager.roomList.add(this)
+                instancePlayer(this, event.author())?.also { player ->
+                    playerList.add(player)
+                    gameManager.playerList.add(player)
+                    if (!playerList.contains(player)) {
+                        playerList.add(player)
                     }
-                    createRoom()
-                }
-            }
-            throw RobotException("实例化房间失败!")
+                } ?: throw RobotException("初始化玩家失败!")
+                createRoom(args)
+            } ?: throw RobotException("初始化房间失败!")
         }
 
         /**
@@ -89,11 +93,13 @@ class GameManager {
          */
         suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> joinRoom(
             event: GroupMessageEvent,
-            room: Room<G, P, R>,
+            room: R,
+            args: GameArg,
         ) {
-            val player: P = room.addPlayer(event.author())
+            val player = instancePlayer(room, event.author()) ?: throw RobotException("初始化玩家失败!")
             gameManager.playerList.add(player)
-            room.join(player)
+            room.playerList.add(player)
+            room.join(player, args)
             if (room.isFull()) {
                 room.playerFull()
             }
@@ -101,26 +107,32 @@ class GameManager {
 
         /**
          * 离开房间
-         * @param player 玩家对象
          */
-        fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> leaveRoom(player: P) {
-            player.room.let {
-                assert(it.playerList.contains(player)) { "数据异常!" }
-                it.leave(player)
-                it.playerList.remove(player)
+        fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> P.leaveRoom() {
+            room.let {
+                assert(it.playerList.contains(this)) { "数据异常!" }
+                it.leave(this)
+                it.playerList.remove(this)
                 if (it.playerList.isEmpty()) {
                     it.destroy()
                     it.game.roomList.remove(it)
                     gameManager.roomList.remove(it)
                 }
             }
-            gameManager.playerList.remove(player)
+            gameManager.playerList.remove(this)
         }
 
         /**
-         * 根据名称获取[Game]的实例对象
+         * 销毁房间
          */
-        fun getGameByName(name: String) = if (name.isNotEmpty()) gameManager.gameSet.find { it.name == name } else null
+        fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> R.destroyRoom() {
+            this.playerList.forEach {
+                gameManager.playerList.remove(it)
+            }
+            destroy()
+            game.roomList.remove(this)
+            gameManager.roomList.remove(this)
+        }
 
         /**
          * 根据房间id获取房间列表
@@ -138,9 +150,45 @@ class GameManager {
             return null
         }
 
-        fun getPlayerById(qq: String): Player<*, *, *>? {
-            gameManager.playerList.find { it.id == qq }?.let {
-                return it
+        suspend fun GroupMessageEvent.getPlayer(): Player<*, *, *>? {
+            gameManager.playerList.find { it.id == authorId() }?.let {
+                if (it.getRoomId() == groupId()) {
+                    return it
+                }
+            }
+            return null
+        }
+
+        /**
+         * 实例化房间
+         */
+        private suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> instanceRoom(
+            game: Game<G, R, P>,
+            event: GroupMessageEvent,
+        ): R? {
+            @Suppress("UNCHECKED_CAST") val room =
+                (game.javaClass.genericSuperclass as ParameterizedType).actualTypeArguments.find {
+                    (it as Class<*>).superclass == Room::class.java
+                } as Class<R>
+            room.kotlin.constructors.find { it.parameters.size == 3 }?.let {
+                return it.call(event.groupId(), event.group().name, game)
+            }
+            return null
+        }
+
+        /**
+         * 实例化房间
+         */
+        private fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> instancePlayer(
+            room: R,
+            qq: Member,
+        ): P? {
+            @Suppress("UNCHECKED_CAST") val player =
+                (room.game.javaClass.genericSuperclass as ParameterizedType).actualTypeArguments.find {
+                    (it as Class<*>).superclass == Player::class.java
+                } as Class<P>
+            player.kotlin.constructors.find { it.parameters.size == 3 }?.let {
+                return it.call(qq.id.toString(), qq.nickOrUsername, room)
             }
             return null
         }

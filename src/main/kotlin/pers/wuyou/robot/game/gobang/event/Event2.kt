@@ -2,6 +2,7 @@ package pers.wuyou.robot.game.gobang.event
 
 import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.common.isNull
+import pers.wuyou.robot.game.common.interfaces.GameArg
 import pers.wuyou.robot.game.common.interfaces.GameEvent
 import pers.wuyou.robot.game.common.interfaces.GameEventMatcher
 import pers.wuyou.robot.game.common.interfaces.GameStatus
@@ -15,12 +16,12 @@ import java.util.concurrent.TimeUnit
  */
 @Component
 class Event2 : GameEvent<GobangGame, GobangRoom, GobangPlayer>() {
-    override val matcher: GameEventMatcher = GameEventMatcher {
+    override val matcher: GameEventMatcher = GameEventMatcher { it, _ ->
         it.plainText == "开始游戏"
     }
 
-    override suspend fun invoke(e: Any) {
-        play(e as GobangPlayer)
+    override suspend fun invoke(player: GobangPlayer, gameArg: GameArg) {
+        play(player)
 
     }
 

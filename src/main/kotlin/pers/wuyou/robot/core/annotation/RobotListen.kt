@@ -10,7 +10,7 @@ import pers.wuyou.robot.core.enums.RobotPermission
 /**
  * @author wuyou
  */
-@Suppress("OPT_IN_USAGE")
+@Suppress("OPT_IN_USAGE", "unused")
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
 @Listener
@@ -32,6 +32,8 @@ annotation class RobotListen(
      * 此事件的优先级。
      */
     @get:AliasFor(attribute = "priority", annotation = Listener::class) val priority: Int = PriorityConstant.NORMAL,
+
+    @get:AliasFor(attribute = "id", annotation = Listener::class) val id: String = "",
 
     /**
      * 是否在当前群开机的时候执行,仅当监听类型是[GroupMessageEvent]时有效

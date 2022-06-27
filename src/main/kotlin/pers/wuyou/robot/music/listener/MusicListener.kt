@@ -1,10 +1,9 @@
 package pers.wuyou.robot.music.listener
 
+import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
 import love.forte.simboot.annotation.FilterValue
 import love.forte.simboot.filter.MatchType.REGEX_MATCHES
-import love.forte.simbot.ExperimentalSimbotApi
-import love.forte.simbot.event.ContinuousSessionContext
 import love.forte.simbot.event.FriendMessageEvent
 import love.forte.simbot.event.MessageEvent
 import org.ktorm.database.Database
@@ -12,7 +11,6 @@ import org.ktorm.dsl.eq
 import org.ktorm.entity.add
 import org.ktorm.entity.find
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
 import pers.wuyou.robot.core.annotation.RobotListen
 import pers.wuyou.robot.core.common.logger
 import pers.wuyou.robot.core.common.send
@@ -28,9 +26,7 @@ import java.util.concurrent.TimeUnit
 /**
  * @author wuyou
  */
-@Suppress("OPT_IN_IS_NOT_ENABLED")
-@OptIn(ExperimentalSimbotApi::class)
-@Component
+@Beans
 class MusicListener(private val database: Database, private val musicSearchService: BaseMusicService) {
     @Value("\${robot.host}")
     private val host: String? = null
@@ -39,7 +35,6 @@ class MusicListener(private val database: Database, private val musicSearchServi
     @Filter(value = "^(网易.*|[Q,q]{2}.*|)(点歌|搜歌){{name}}$", matchType = REGEX_MATCHES)
     suspend fun MessageEvent.music(
         @FilterValue("name") name: String,
-        session: ContinuousSessionContext,
     ) {
         // 根据前缀搜索歌曲
         val musicInfoList: List<MusicInfo> = when {

@@ -2,27 +2,22 @@ package pers.wuyou.robot.game.common.listener
 
 import love.forte.di.annotation.Beans
 import love.forte.simboot.annotation.Filter
-import love.forte.simboot.annotation.Filters
-import love.forte.simboot.filter.MultiFilterMatchType
 import love.forte.simboot.listener.ParameterBinder
 import love.forte.simboot.listener.ParameterBinderFactory
 import love.forte.simboot.listener.ParameterBinderResult
 import love.forte.simbot.PriorityConstant
 import love.forte.simbot.attribute
-import love.forte.simbot.event.ContinuousSessionContext
 import love.forte.simbot.event.EventListenerProcessingContext
 import love.forte.simbot.event.GroupMessageEvent
 import love.forte.simbot.message.At
-import org.springframework.stereotype.Component
+import org.springframework.boot.logging.LogLevel
 import pers.wuyou.robot.core.annotation.RobotListen
-import pers.wuyou.robot.core.common.isNull
-import pers.wuyou.robot.core.common.send
-import pers.wuyou.robot.core.common.sendAndWait
-import pers.wuyou.robot.core.common.stringMutableList
+import pers.wuyou.robot.core.common.*
 import pers.wuyou.robot.core.util.MessageUtil.authorId
 import pers.wuyou.robot.core.util.MessageUtil.groupId
 import pers.wuyou.robot.game.common.GameManager
 import pers.wuyou.robot.game.common.interfaces.Game
+import pers.wuyou.robot.game.common.interfaces.GameArg
 import pers.wuyou.robot.game.common.interfaces.Player
 import pers.wuyou.robot.game.common.interfaces.Room
 import java.util.concurrent.TimeUnit
@@ -31,21 +26,13 @@ import kotlin.reflect.full.findAnnotation
 @Beans
 class GameParameterBinderFactory : ParameterBinderFactory {
     override fun resolveToBinder(context: ParameterBinderFactory.Context): ParameterBinderResult {
-
-        // 寻找参数上的注解，找不到则跳过
         val attrAnnotation = context.parameter.findAnnotation<GameAttr>() ?: return ParameterBinderResult.empty()
-
-        // 构建binder
-        // 细节问题自己处理，可空处理等。
         return ParameterBinderResult.normal(AttrBinder(attrAnnotation.value))
-
     }
 
     private class AttrBinder(attrName: String) : ParameterBinder {
         private val attr = attribute<Any>(attrName)
         override suspend fun arg(context: EventListenerProcessingContext): Result<Any?> {
-            // 从上下文尝试获取目标
-            // 此处无视任何细节，直接尝试返回
             return kotlin.runCatching { context[attr] }
         }
     }
@@ -54,7 +41,7 @@ class GameParameterBinderFactory : ParameterBinderFactory {
 annotation class GameAttr(val value: String)
 
 
-@Component
+@Beans
 class GameListener {
     @RobotListen(isBoot = true)
     @Filter("房间列表")
@@ -71,101 +58,73 @@ class GameListener {
         send(msg, "\n")
     }
 
-    @RobotListen(isBoot = true, priority = PriorityConstant.PRIORITIZED_8)
-    @Filters(
-        Filter("离开|退出|离开房间|退出房间|不玩了|exit"),
-        Filter(by = GameEventFilter::class),
-        multiMatchType = MultiFilterMatchType.ALL
-    )
-    @Suppress("UNCHECKED_CAST")
-    suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> GroupMessageEvent.leaveRoom(
-        @GameAttr("player") player: Player<G, R, P>,
-    ) {
-        println("离开")
-        GameManager.leaveRoom(player as P)
-    }
-
-    @RobotListen(isBoot = true)
-    @Filter(by = JoinGameFilter::class)
+    /**
+     * 加入游戏, 只在玩家不在任何游戏中时执行
+     */
+    @RobotListen(isBoot = true, id = "JoinGame")
+    @Filter(by = JoinGameFilterFactory::class)
     suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> GroupMessageEvent.game(
         @GameAttr("game") game: Game<G, R, P>,
+        @GameAttr("args") args: GameArg,
     ) {
-        GameManager.getRoomByPlayerId(authorId())?.let {
-            send("你已经在房间 $it 里了")
+        GameManager.getRoomByPlayerId(authorId())?.also {
+            when (it.id) {
+                groupId() -> send(it.game.alreadyInRoomTip(it))
+                else -> send(it.game.alreadyInOtherRoomTip(it))
+            }
         }.isNull {
-            game.let {
-                if (it.canMultiRoom) {
-                    // 可以多房间
-                    val list = it.roomListById(groupId()).ifEmpty { null }
-                    list?.also { roomList ->
-                        val msg = stringMutableList()
-                        msg += "${it.name}房间列表:"
-                        roomList.forEachIndexed { i, room ->
-                            msg += "${i + 1}. ${room.getDesc(authorId())}"
-                        }
-                        msg += "请选择房间编号或者发送\"新建${it.name}房间\"来新建一个房间"
-                        sendAndWait(msg, "\n", 1, TimeUnit.MINUTES) { event ->
-                            event.messageContent.plainText.toIntOrNull()?.let { index ->
-                                return@sendAndWait index > 0 && roomList.size >= index
-                            }
-                            false
-                        }?.plainText?.toInt()?.let { num ->
-                            GameManager.joinRoom(this, roomList[num - 1])
-                        }
-                    }.isNull {
-                        // 这个群没有这个类型的房间
-                        GameManager.createRoom(it, this)
+            if (game.canMultiRoom) {
+                // 可以多房间
+                val list = game.roomListById(groupId()).ifEmpty { null }
+                list?.also { roomList ->
+                    val msg = stringMutableList()
+                    msg += "${game.name}房间列表:"
+                    roomList.forEachIndexed { i, room ->
+                        msg += "${i + 1}. ${room.getDesc(authorId())}"
                     }
-                } else {
-                    it.roomListById(groupId()).ifEmpty { null }?.also {
-                        send("当前已有房间,此游戏不可多房间!")
-                    }.isNull {
-                        GameManager.createRoom(it, this)
+                    msg += "请选择房间编号或者发送\"新建${game.name}房间\"来新建一个房间"
+                    sendAndWait(msg, "\n", 1, TimeUnit.MINUTES) { event ->
+                        event.messageContent.plainText.toIntOrNull()?.let { index ->
+                            return@sendAndWait index > 0 && roomList.size >= index
+                        }
+                        false
+                    }?.plainText?.toInt()?.let { num ->
+                        GameManager.joinRoom(this, roomList[num - 1], args)
                     }
+                }.isNull {
+                    // 这个群没有这个类型的房间
+                    GameManager.createRoom(game, this, args)
+                }
+            } else {
+                game.roomListById(groupId()).ifEmpty { null }?.also {
+                    GameManager.joinRoom(this, it[0], args)
+                }.isNull {
+                    GameManager.createRoom(game, this, args)
                 }
             }
         }
     }
 
-    @RobotListen(isBoot = true)
-    @Filter(by = CreateRoomFilter::class)
-    suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> GroupMessageEvent.createRoom(
-        @GameAttr("game") game: Game<G, R, P>,
-    ) {
-        GameManager.getRoomByPlayerId(authorId())?.let {
-            send("你已经在房间 $it 里了")
-        }.isNull {
-            game.let {
-                if (it.canMultiRoom) {
-                    // 可以多房间
-                    GameManager.createRoom(it, this)
-                } else {
-                    it.roomListById(groupId()).ifEmpty { null }?.also {
-                        send("当前已有房间,此游戏不可多房间!")
-                    }.isNull {
-                        GameManager.createRoom(it, this)
-                    }
-                }
-            }
-        }
-    }
-
-    @Suppress("OPT_IN_USAGE")
-    @RobotListen(isBoot = true, priority = PriorityConstant.PRIORITIZED_9)
-    @Filter(by = GameEventFilter::class)
+    @Suppress("OPT_IN_USAGE", "UNCHECKED_CAST")
+    @RobotListen(isBoot = true, priority = PriorityConstant.PRIORITIZED_9, id = "GameEvent")
+    @Filter(by = GameEventFilterFactory::class)
     suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> GroupMessageEvent.gameEvent(
         @GameAttr("game") game: Game<G, R, P>,
         @GameAttr("player") player: Player<G, R, P>,
-        session: ContinuousSessionContext,
     ) {
         // 如果玩家在等待列表里则不执行游戏事件
         if (game.waitPlayerList.contains(player)) return
         // 根据玩家状态获取游戏事件并执行
-        game.eventMap[player.getStatus()]?.let { map ->
-            map.find {
-                it.matcher.invoke(messageContent)
-            }?.invoke(player).isNull {
-                player.room.otherMessage(messageContent)
+        game.eventMap[player.getStatus()].let { map ->
+            val gameArg = GameArg(this).apply {
+                this["player"] = player
+                this["game"] = game
+            }
+            map?.find {
+                logger(LogLevel.DEBUG) { "[${game.name}]执行了游戏事件${it.javaClass.simpleName}" }
+                it.matcher.invoke(messageContent, gameArg)
+            }?.invoke(player as P, gameArg).isNull {
+                player.room.otherMessage(player as P, this)
             }
         }
     }

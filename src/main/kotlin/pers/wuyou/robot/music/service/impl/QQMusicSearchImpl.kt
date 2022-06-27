@@ -139,8 +139,10 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
     }
 
     override fun getPreview(musicInfo: MusicInfo): String {
-        return String.format("https:%s",
-            HttpUtil.getJson(musicInfo.jumpUrl, "__INITIAL_DATA__").getJSONObject("detail").getString("picurl"))
+        return String.format(
+            "https:%s",
+            HttpUtil.getJson(musicInfo.jumpUrl, "__INITIAL_DATA__").getJSONObject("detail").getString("picurl")
+        )
     }
 
     private fun getPurl(data: Map<String, String>): String {
@@ -186,14 +188,9 @@ class QQMusicSearchImpl(musicProperties: MusicProperties, private val baseMusicS
         val response: String = responseEntity.response
         cookie.putAll(responseEntity.cookies)
         val resultArray = getResultArray(response)
-        val list: List<String> = CommandUtil.exec("node",
-            jsFilePath,
-            uin,
-            pwd,
-            resultArray[1],
-            resultArray[3],
-            resultArray[5],
-            resultArray[6])
+        val list: List<String> = CommandUtil.exec(
+            "node", jsFilePath, uin, pwd, resultArray[1], resultArray[3], resultArray[5], resultArray[6]
+        )
         if (list.isEmpty()) {
             logger(LogLevel.WARN) { "js执行失败,请检查是否安装了node环境" }
             return false

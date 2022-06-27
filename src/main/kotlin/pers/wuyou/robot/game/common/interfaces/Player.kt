@@ -5,10 +5,11 @@ import pers.wuyou.robot.core.common.Sender
 /**
  * @author wuyou
  */
-abstract class Player<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> {
-    open lateinit var id: String
-    open lateinit var name: String
-    open lateinit var room: R
+abstract class Player<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>>(
+    open var id: String,
+    open var name: String,
+    open var room: R,
+) {
     var isPlaying = false
     var pre: P? = null
     var next: P? = null
@@ -20,6 +21,6 @@ abstract class Player<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>>
     fun isInRoom(roomId: String?): Boolean = room.id == roomId
     fun send(message: String) = Sender.sendPrivateMsg(id, message)
     override fun toString(): String = "${name}[$id]"
-    abstract fun getStatus(): GameStatus
+    open fun getStatus() = GameStatus("")
 }
 

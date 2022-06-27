@@ -98,7 +98,7 @@ class RobotCore(private val database: Database, private var applicationContext: 
         }
 
         @Suppress("OPT_IN_USAGE")
-        fun getBot(): Bot? {
+        fun getBot(): Bot {
             return OriginBotManager.getAnyBot()
         }
     }
@@ -111,7 +111,19 @@ inline fun <T> T.isNull(block: () -> Unit): T {
     return this
 }
 
+inline fun Boolean.then(block: () -> Unit) = this.also { if (this) block() }
+
+inline operator fun Boolean.invoke(block: () -> Unit) = this.then(block)
+
+inline fun Boolean?.onElse(block: () -> Unit): Boolean = this.let {
+    it?.not()?.then(block).isNull { block() }
+    it ?: false
+}
+
+inline operator fun Boolean?.minus(block: () -> Unit): Boolean = this.onElse(block)
+
 fun stringMutableList(vararg elements: String): MutableList<String> = mutableListOf(*elements)
+@Suppress("unused")
 fun String.substring(startStr: String = "", endStr: String = ""): String {
     val start = (if (startStr.isEmpty()) 0 else this.indexOf(startStr) + startStr.length).let {
         if (it > 0) it else 0

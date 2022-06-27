@@ -1,9 +1,9 @@
 package pers.wuyou.robot.core.common
 
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import love.forte.simbot.event.Event
 import love.forte.simbot.event.GroupMessageEvent
+import love.forte.simbot.utils.item.toList
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -46,7 +46,7 @@ class ListenerAspect {
         if (event is GroupMessageEvent) {
             val group = runBlocking { event.group() }
             val author = runBlocking { event.author() }
-            val role = runBlocking { author.roles().first() }
+            val role = runBlocking { author.roles.toList()[0] }
             // 判断是否开机
             if (annotation.isBoot && !RobotCore.BOOT_MAP.getOrDefault(group.id.toString(), false)) {
                 return proceedFailed("当前群未开机")

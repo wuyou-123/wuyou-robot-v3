@@ -1,8 +1,9 @@
 package pers.wuyou.robot.game.common.interfaces
 
-import love.forte.simbot.event.EventMatcher
+import love.forte.simbot.event.ContinuousSessionEventMatcher
 import love.forte.simbot.event.MessageEvent
 import love.forte.simbot.message.MessageContent
+import org.springframework.boot.logging.LogLevel
 import pers.wuyou.robot.core.common.Sender
 import pers.wuyou.robot.core.common.getBean
 import pers.wuyou.robot.core.common.logger
@@ -22,12 +23,12 @@ abstract class GameEvent<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, 
     /**
      * 事件方法
      */
-    abstract suspend fun invoke(e: Any)
+    abstract suspend fun invoke(player: P, gameArg: GameArg)
 
     /**
      * 绑定的游戏状态
      */
-    abstract fun getStatus(): GameStatus
+    open fun getStatus() = GameStatus("")
 
     @PostConstruct
     fun init() {
@@ -39,7 +40,7 @@ abstract class GameEvent<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, 
             null -> game.eventMap[getStatus()] = mutableListOf(this)
             else -> gameEvents.add(this)
         }
-        logger { "初始化游戏事件 ${this@GameEvent::class}" }
+        logger(LogLevel.DEBUG) { "init game event [${game.name}] ${this@GameEvent::class.simpleName}" }
     }
 
     /**
@@ -55,7 +56,7 @@ abstract class GameEvent<G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, 
         message: String,
         timeout: Long = 1,
         timeUnit: TimeUnit = TimeUnit.MINUTES,
-        eventMatcher: EventMatcher<MessageEvent> = EventMatcher,
+        eventMatcher: ContinuousSessionEventMatcher<MessageEvent> = ContinuousSessionEventMatcher,
     ): MessageContent? {
         player.room.game.waitPlayerList.add(player)
         return Sender.sendGroupAndWait(player.room.id, player.id, message, "", timeout, timeUnit, eventMatcher).also {
@@ -88,6 +89,7 @@ fun interface GameEventMatcher {
     /**
      * 执行匹配方法
      * @param msg 收到的消息
+     * @param gameArg 游戏参数
      */
-    suspend operator fun invoke(msg: MessageContent): Boolean
+    suspend operator fun invoke(msg: MessageContent, gameArg: GameArg): Boolean
 }

@@ -1,7 +1,7 @@
 package pers.wuyou.robot.game.gobang
 
-import love.forte.simbot.definition.Member
-import love.forte.simbot.message.MessageContent
+import love.forte.simbot.event.GroupMessageEvent
+import pers.wuyou.robot.game.common.interfaces.GameArg
 import pers.wuyou.robot.game.common.interfaces.Room
 
 /**
@@ -13,34 +13,28 @@ class GobangRoom(
     override val game: GobangGame,
 ) : Room<GobangGame, GobangPlayer, GobangRoom>() {
 
-    override fun addPlayer(qq: Member): GobangPlayer {
-        return GobangPlayer(qq.id.toString(), qq.nickOrUsername, this).also {
-            playerList.add(it)
-        }
-    }
-
     override fun playerFull() {
-        send("房间已满!开始游戏")
+        println("房间已满!开始游戏")
     }
 
-    override fun createRoom() {
-        send("新建房间成功!")
+    override fun createRoom(args: GameArg) {
+        println("新建房间成功!$args")
     }
 
-    override fun join(player: GobangPlayer) {
-        send("玩家 $player 加入了房间")
+    override fun join(player: GobangPlayer, args: GameArg) {
+        println("玩家 $player 加入了房间")
     }
 
     override fun destroy() {
-        send("玩家为空,房间已自动销毁")
+        println("玩家为空,房间已自动销毁")
     }
 
     override fun leave(player: GobangPlayer) {
-        send("玩家 $player 离开了房间")
+        println("玩家 $player 离开了房间")
     }
 
-    override fun otherMessage(messageContent: MessageContent) {
-        send("收到其他消息")
+    override fun otherMessage(player: GobangPlayer, event: GroupMessageEvent) {
+        println("收到其他消息${event.messageContent.plainText}")
     }
 
     override fun toString(): String {

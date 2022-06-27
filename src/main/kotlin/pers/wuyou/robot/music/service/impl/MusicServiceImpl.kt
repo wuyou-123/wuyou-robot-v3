@@ -3,7 +3,9 @@ package pers.wuyou.robot.music.service.impl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import pers.wuyou.robot.core.common.invoke
 import pers.wuyou.robot.core.common.logger
 import pers.wuyou.robot.music.entity.MusicInfo
 import pers.wuyou.robot.music.service.BaseMusicService
@@ -17,7 +19,8 @@ import java.util.stream.Collectors
  */
 @Service
 class MusicServiceImpl(
-    override var musicSearchServiceList: ArrayList<MusicSearchService>?
+    override var musicSearchServiceList: ArrayList<MusicSearchService>?,
+    @Value("\${music.autoLogin}") private val autoLogin: Boolean,
 ) : BaseMusicService {
 
     override fun search(name: String): List<MusicInfo> {
@@ -74,10 +77,12 @@ class MusicServiceImpl(
 
     override fun run(vararg args: String) {
         initServices()
-        for (service in BaseMusicService.SearchService.values()) {
-            CoroutineScope(Dispatchers.Default).launch {
-                val loginResult = service.musicSearchServiceClass.login()
-                logger { "${service.name} login ${if (loginResult) "success" else "fail"}." }
+        autoLogin {
+            for (service in BaseMusicService.SearchService.values()) {
+                CoroutineScope(Dispatchers.Default).launch {
+                    val loginResult = service.musicSearchServiceClass.login()
+                    logger { "${service.name} login ${if (loginResult) "success" else "fail"}." }
+                }
             }
         }
     }

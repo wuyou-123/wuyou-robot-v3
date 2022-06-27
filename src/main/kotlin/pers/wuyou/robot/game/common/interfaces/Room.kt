@@ -1,26 +1,16 @@
 package pers.wuyou.robot.game.common.interfaces
 
-import love.forte.simbot.definition.Member
-import love.forte.simbot.message.MessageContent
+import love.forte.simbot.event.GroupMessageEvent
 import pers.wuyou.robot.core.common.Sender
 
 /**
  * 游戏房间抽象类
  * @author wuyou
  */
+@Suppress("MemberVisibilityCanBePrivate")
 abstract class Room<G : Game<G, R, P>, P : Player<G, R, P>, R : Room<G, P, R>> {
     open lateinit var id: String
     open lateinit var name: String
-//
-//    /**
-//     * 当前房间状态
-//     */
-//    var status: RoomStatus = RoomStatus.CREATED
-
-    /**
-     * 当前玩家索引
-     */
-    var currentPlayerIndex: Int = -1
 
     /**
      * 玩家携带数据
@@ -38,12 +28,6 @@ abstract class Room<G : Game<G, R, P>, P : Player<G, R, P>, R : Room<G, P, R>> {
     abstract val game: Game<G, R, P>
 
     /**
-     * 添加玩家的方法,房间需要手动实例化玩家对象
-     * @return 实例化后的玩家对象
-     */
-    abstract fun addPlayer(qq: Member): P
-
-    /**
      * 判断房间是否已满
      */
     fun isFull(): Boolean = playerList.size >= game.maxPlayerCount
@@ -51,7 +35,7 @@ abstract class Room<G : Game<G, R, P>, P : Player<G, R, P>, R : Room<G, P, R>> {
     /**
      * 发送消息
      */
-    fun send(message: String) = Sender.sendGroupMsg(id, message)
+    fun send(messages: Any, separator: String = "") = Sender.sendGroupMsg(id, messages, separator)
 
     /**
      * 根据QQ号判断玩家是否在房间内
@@ -68,7 +52,7 @@ abstract class Room<G : Game<G, R, P>, P : Player<G, R, P>, R : Room<G, P, R>> {
     /**
      * 创建房间时执行的方法,用于实现类重写
      */
-    open fun createRoom() {}
+    open fun createRoom(args: GameArg) {}
 
     /**
      * 销毁房间时执行的方法,用于实现类重写
@@ -78,7 +62,7 @@ abstract class Room<G : Game<G, R, P>, P : Player<G, R, P>, R : Room<G, P, R>> {
     /**
      * 加入房间时执行的方法,用于实现类重写,不需要手动添加玩家!
      */
-    open fun join(player: P) {}
+    open fun join(player: P, args: GameArg) {}
 
     /**
      * 玩家离开房间时执行的方法,用于实现类重写,不需要手动删除玩家!
@@ -86,14 +70,14 @@ abstract class Room<G : Game<G, R, P>, P : Player<G, R, P>, R : Room<G, P, R>> {
     open fun leave(player: P) {}
 
     /**
-     * 玩家已满时调用的方法,为了保证游戏流程此方法必须重写
+     * 玩家已满时调用的方法,用于实现类重写
      */
-    abstract fun playerFull()
+    open fun playerFull() {}
 
     /**
      * 收到其他消息的处理方法
      */
-    open fun otherMessage(messageContent: MessageContent) {}
+    open fun otherMessage(player: P, event: GroupMessageEvent) {}
 
     /**
      * 获取房间描述信息
