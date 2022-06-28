@@ -16,7 +16,7 @@
     <description>wuyou-robot-v3</description>
     <properties>
         <java.version>1.8</java.version>
-        <simbot.version>3.0.0.preview.17.0</simbot.version>
+        <simbot.version>3.0.0.preview.17.1</simbot.version>
         <simbot-component-mirai.version>3.0.0.0.preview.11.0</simbot-component-mirai.version>
     </properties>
     <dependencies>

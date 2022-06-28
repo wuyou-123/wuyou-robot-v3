@@ -9,45 +9,19 @@ import love.forte.simbot.event.*
 import pers.wuyou.robot.game.common.GameManager
 import pers.wuyou.robot.game.common.GameManager.Companion.getPlayer
 import pers.wuyou.robot.game.common.interfaces.Game
-import kotlin.reflect.full.createInstance
 
-@Suppress("unused")
+val eventFilterMap = mutableMapOf<String, EventFilter>().apply {
+    put("JoinGame", JoinGameFilter())
+    put("GameEvent", GameEventFilter())
+}
+
 class GameAnnotationEventFilterFactory : AnnotationEventFilterFactory {
     override fun resolveFilter(
         listener: EventListener,
         listenerAttributes: MutableAttributeMap,
         filter: Filter,
         filters: Filters,
-    ): EventFilter? {
-//        通过监听器id获取过滤器,但现在id获取不到,等下个版本再用
-        return when (listener.id) {
-            "JoinGame" -> JoinGameFilter::class.createInstance()
-            "GameEvent" -> GameEventFilter::class.createInstance()
-            else -> null
-        }
-    }
-}
-
-class JoinGameFilterFactory : AnnotationEventFilterFactory {
-    override fun resolveFilter(
-        listener: EventListener,
-        listenerAttributes: MutableAttributeMap,
-        filter: Filter,
-        filters: Filters,
-    ): EventFilter {
-        return JoinGameFilter::class.createInstance()
-    }
-}
-
-class GameEventFilterFactory : AnnotationEventFilterFactory {
-    override fun resolveFilter(
-        listener: EventListener,
-        listenerAttributes: MutableAttributeMap,
-        filter: Filter,
-        filters: Filters,
-    ): EventFilter {
-        return GameEventFilter::class.createInstance()
-    }
+    ) = eventFilterMap[listener.id]
 }
 
 /**

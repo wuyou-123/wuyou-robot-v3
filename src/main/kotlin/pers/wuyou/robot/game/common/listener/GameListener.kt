@@ -62,7 +62,7 @@ class GameListener {
      * 加入游戏, 只在玩家不在任何游戏中时执行
      */
     @RobotListen(isBoot = true, id = "JoinGame")
-    @Filter(by = JoinGameFilterFactory::class)
+    @Filter(by = GameAnnotationEventFilterFactory::class)
     suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> GroupMessageEvent.game(
         @GameAttr("game") game: Game<G, R, P>,
         @GameAttr("args") args: GameArg,
@@ -107,7 +107,7 @@ class GameListener {
 
     @Suppress("OPT_IN_USAGE", "UNCHECKED_CAST")
     @RobotListen(isBoot = true, priority = PriorityConstant.PRIORITIZED_9, id = "GameEvent")
-    @Filter(by = GameEventFilterFactory::class)
+    @Filter(by = GameAnnotationEventFilterFactory::class)
     suspend fun <G : Game<G, R, P>, R : Room<G, P, R>, P : Player<G, R, P>> GroupMessageEvent.gameEvent(
         @GameAttr("game") game: Game<G, R, P>,
         @GameAttr("player") player: Player<G, R, P>,
